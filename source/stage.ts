@@ -17,12 +17,12 @@ export class Stage {
     constructor() {
 
 
-        this.platforms = new Array<Platform> (4);
+        this.platforms = new Array<Platform> (5);
 
         for (let y : number = 0; y < this.platforms.length; ++ y) {
 
             const dy : number = -64 + y*64;
-            this.platforms[y] = new Platform(dy, 192, -64);
+            this.platforms[y] = new Platform(dy, 256, -64);
         }
     }
 

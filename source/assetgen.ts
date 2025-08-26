@@ -60,6 +60,9 @@ const PALETTE_TABLE : number[] = [
     0b111111101, // D Bright yellow
 
     0b011001000, // E Dark red
+    0b101011000, // F Brown
+    0b111101010, // G Yellowish thing
+
 
 ];
 
@@ -70,8 +73,8 @@ const GAME_ART_PALETTE_TABLE : (string | undefined) [] = [
     "1089", "1089", "1089", "1089", "EABC", "EABC", "EABC", "EABC",
     "1056", "1056", "1067", "1067", "1067", "1065", "108D", "108D",
     "1056", "1056", "1067", "1067", "1067", "1065", "1056", "1056",
-    "1056", "1056", "0000", "0000", "0000", "0000", "0000", "0000",
-    "0000", "0000", "0000", "0000", "0000", "0000", "0000", "0000",
+    "1056", "1056", "10B2", "10B2", "10FG", "10FG", "10FG", "0000",
+    "1034", "1034", "1056", "1056", "10FG", "10FG", "10FG", "0000",
 ];
 
 
@@ -103,15 +106,24 @@ const generateTerrainBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
     const canvas : RenderTarget = new RenderTarget(256, 32, false);
 
     // Adding missing colors
+    canvas.setColor("#000000");
+    canvas.fillRect(211, 7, 27, 4);
+
     canvas.setColor("#ffff6d");
     canvas.fillRect(2, 1, 28, 2);
     canvas.fillRect(1, 2, 1, 6);
 
     canvas.setColor("#ffdb92");
     canvas.fillRect(2, 3, 28, 5);
+    canvas.fillRect(150, 4, 4, 4);
+    canvas.fillRect(176, 4, 16, 5);
 
     canvas.setColor("#db9249");
     canvas.fillRect(4, 8, 24, 6);
+
+    canvas.setColor("#924900");
+    canvas.fillRect(192, 8, 16, 2);
+    canvas.fillRect(212, 8, 25, 2);
 
     // Terrain & floor
     canvas.drawBitmap(bmpBase, Flip.None, 0, 0, 0, 0, 64, 16);
@@ -127,8 +139,25 @@ const generateTerrainBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
     for (let i : number = 0; i < 2; ++ i) {
 
         canvas.drawBitmap(bmpBase, Flip.None, 124, (i + 1)*8, 48, 16, 8, 8);
+
+        // Also bridge
+        canvas.drawBitmap(bmpBase, Flip.None, 176 + i*8, 0, 32, 32, 8, 16);
+        // ...and fence parts
+        canvas.drawBitmap(bmpBase, Flip.None, 192 + i*12, 0, 41, 32, 4, 16);
+        canvas.drawBitmap(bmpBase, Flip.None, 220 + i*4, 0, 41, 32, 4, 16);
     }
     canvas.drawBitmap(bmpBase, Flip.None, 124, 24, 56, 16, 8, 8);
+
+    // Flower
+    canvas.drawBitmap(bmpBase, Flip.None, 144, 2, 16, 32, 16, 16);
+    // Rock
+    canvas.drawBitmap(bmpBase, Flip.None, 164, 8, 8, 40, 8, 8);
+
+    // Fence
+    for (let i : number = 0; i < 3; ++ i) {
+    
+        canvas.drawBitmap(bmpBase, Flip.None, 192 + 4 + i*16, 0, 44, 32, 9, 16);
+    }
 
     assets.addBitmap(BitmapIndex.Terrain, canvas.toBitmap());
 }
