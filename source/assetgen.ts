@@ -93,7 +93,7 @@ const generateTerrainBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
 
     const canvas : RenderTarget = new RenderTarget(128, 16, false);
 
-    canvas.setColor("#dbff00");
+    canvas.setColor("#ffff6d");
     canvas.fillRect(2, 1, 28, 2);
     canvas.fillRect(1, 2, 1, 6);
 
