@@ -55,14 +55,23 @@ const PALETTE_TABLE : number[] = [
 
     0b101010000, // A Orange-ish brown
     0b111100010, // B Brighter orange
-    0b111110101, // C Brightest orange
+    0b111110101, // C Brightest orange (or something close enough)
+
+    0b111111101, // D Bright yellow
+
+    0b011001000, // E Dark red
+
 ];
 
 
 const GAME_ART_PALETTE_TABLE : (string | undefined) [] = [
 
-    "1056", "1056", "1056", "1056", "1ABC", "1ABC", "1ABC", "1ABC",
-    "1089", "1089", "1089", "1089", "1ABC", "1ABC", "1ABC", "1ABC",
+    "1056", "1056", "1056", "1056", "EABC", "EABC", "EABC", "EABC",
+    "1089", "1089", "1089", "1089", "EABC", "EABC", "EABC", "EABC",
+    "1056", "1056", "1067", "1067", "1067", "1065", "108D", "108D",
+    "1056", "1056", "1067", "1067", "1067", "1065", "1056", "1056",
+    "1056", "1056", "0000", "0000", "0000", "0000", "0000", "0000",
+    "0000", "0000", "0000", "0000", "0000", "0000", "0000", "0000",
 ];
 
 
@@ -91,8 +100,9 @@ const generatePaletteLookup = () : PaletteLookup => {
 
 const generateTerrainBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
 
-    const canvas : RenderTarget = new RenderTarget(128, 16, false);
+    const canvas : RenderTarget = new RenderTarget(256, 32, false);
 
+    // Adding missing colors
     canvas.setColor("#ffff6d");
     canvas.fillRect(2, 1, 28, 2);
     canvas.fillRect(1, 2, 1, 6);
@@ -103,8 +113,22 @@ const generateTerrainBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
     canvas.setColor("#db9249");
     canvas.fillRect(4, 8, 24, 6);
 
+    // Terrain & floor
+    canvas.drawBitmap(bmpBase, Flip.None, 0, 0, 0, 0, 64, 16);
+    // Vine & bush
+    canvas.drawBitmap(bmpBase, Flip.None, 64, 0, 0, 16, 48, 24);
 
-    canvas.drawBitmap(bmpBase);
+    // Palmtree leaves
+    canvas.drawBitmap(bmpBase, Flip.None, 112, 0, 48, 24, 16, 8);
+    canvas.drawBitmap(bmpBase, Flip.Horizontal, 128, 0, 48, 24, 16, 8);
+    // ...and trunk
+    canvas.setColor("#ffdb6d");
+    canvas.fillRect(126, 8, 4, 24);
+    for (let i : number = 0; i < 2; ++ i) {
+
+        canvas.drawBitmap(bmpBase, Flip.None, 124, (i + 1)*8, 48, 16, 8, 8);
+    }
+    canvas.drawBitmap(bmpBase, Flip.None, 124, 24, 56, 16, 8, 8);
 
     assets.addBitmap(BitmapIndex.Terrain, canvas.toBitmap());
 }

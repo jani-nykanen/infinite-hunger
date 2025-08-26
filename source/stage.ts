@@ -36,6 +36,13 @@ export class Stage {
             // Right
             canvas.drawBitmap(bmp, Flip.None, canvas.width - 16, y*16 + this.wallPosition, 32, 0, 16, 16);
         }
+
+        // Black outlines to outer edge
+        canvas.setColor("#000000");
+        for (let i : number = 0; i < 2; ++ i) {
+            
+            canvas.fillRect(15 + (canvas.width - 31)*i, 0, 1, canvas.height);
+        }
     }
 
 
