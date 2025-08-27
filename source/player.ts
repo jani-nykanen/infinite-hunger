@@ -5,6 +5,7 @@ import { ProgramComponents } from "./program.js";
 import { BitmapIndex, Controls } from "./mnemonics.js";
 import { approachValue } from "./utility.js";
 import { ActionState, InputState } from "./controller.js";
+import { Dust } from "./dust.js";
 
 
 export class Player {
@@ -22,6 +23,10 @@ export class Player {
 
     private jumpTimer : number = 0.0;
     private ledgeTimer : number = 0.0;
+    private canDoubleJump : boolean = false;
+
+    private dust : Dust[];
+    private dustTimer : number = 0.0;
 
 
     constructor(x : number, y : number) {
@@ -31,19 +36,28 @@ export class Player {
         this.speed = Vector.zero();
         this.speedTarget = Vector.zero();
         this.friction = new Vector(0.20, 0.15);
+
+        this.dust = new Array<Dust> ();
     }
 
 
     private controlJumping(comp : ProgramComponents) : void {
 
         const JUMP_TIME : number = 14.0;
+        const DOUBLE_JUMP_TIME : number = 8.0;
 
         const jumpButton : ActionState = comp.controller.getAction(Controls.Jump);
         if (jumpButton.state == InputState.Pressed) {
 
-            if (this.ledgeTimer > 0.0) {
+            const canJumpNormally : boolean = this.ledgeTimer > 0.0;
+            if (canJumpNormally || this.canDoubleJump) {  
 
-                this.jumpTimer = JUMP_TIME;
+                if (!canJumpNormally) {
+
+                    this.canDoubleJump = false;
+                }
+
+                this.jumpTimer = canJumpNormally ? JUMP_TIME : DOUBLE_JUMP_TIME;
                 this.touchSurface = false;
                 this.ledgeTimer = 0.0;
             }
@@ -93,11 +107,40 @@ export class Player {
     }
 
 
+    private animateSprite(start : number, end : number, frameTime : number, tick : number) : void {
+
+        if (this.frame < start || this.frame > end) {
+
+            this.frame = start;
+            this.animationTimer = 0.0;
+        }
+
+        this.animationTimer += tick;
+        if (this.animationTimer >= frameTime) {
+
+            ++ this.frame;
+            if (this.frame > end) {
+
+                this.frame = start;
+            }
+            this.animationTimer = 0.0;
+        }
+    }
+
+
     private animate(tick : number) : void {
 
         const JUMP_ANIM_THRESHOLD : number = 0.5;
+        const DOUBLE_JUMP_ANIMATION_MAX_SPEED : number = 1.0;
 
         if (!this.touchSurface) {
+
+            if (!this.canDoubleJump && 
+                this.speed.y < DOUBLE_JUMP_ANIMATION_MAX_SPEED) {
+
+                this.animateSprite(6, 9, 4, tick);
+                return;
+            }
 
             let frame : number = 0;
             if (this.speed.y < -JUMP_ANIM_THRESHOLD) {
@@ -119,20 +162,8 @@ export class Player {
         }
         else {
 
-            if (this.frame > 3) {
-
-                this.frame = 0;
-                this.animationTimer = 0.0;
-            }
-
             const frameTime : number = (12 - Math.abs(this.speed.x)*4) | 0;
-
-            this.animationTimer += tick;
-            if (this.animationTimer >= frameTime) {
-
-                this.frame = (this.frame + 1) % 4;
-                this.animationTimer = 0.0;
-            }
+            this.animateSprite(0, 3, frameTime, tick);
         }
     }
 
@@ -154,6 +185,45 @@ export class Player {
     }
 
 
+    private updateDust(baseSpeed : number, tick : number) : void {
+
+        const DUST_TIME : number = 5.0;
+
+        for (const d of this.dust) {
+
+            d.update(baseSpeed, tick);
+        }
+
+        if (Math.abs(this.speed.x) < 0.01 && this.touchSurface) {
+
+            this.dustTimer = 0.0;
+            return;
+        }
+
+        this.dustTimer += tick;
+        if (this.dustTimer >= DUST_TIME) {
+
+            let dust : Dust | undefined = undefined;
+            for (const d of this.dust) {
+
+                if (!d.doesExist()) {
+
+                    dust = d;
+                    break;
+                }
+            }
+            if (dust == null) {
+
+                dust = new Dust();
+                this.dust.push(dust);
+            }
+            dust!.spawn(this.pos.x, this.pos.y + 4, 1.0/45.0, 6);
+
+            this.dustTimer -= DUST_TIME;
+        }
+    }
+
+
     private checkWallCollisions() : void {
 
         const COLLISION_WIDTH : number = 8;
@@ -171,13 +241,14 @@ export class Player {
     }
 
 
-    public update(comp : ProgramComponents) : void {
+    public update(baseSpeed : number, comp : ProgramComponents) : void {
 
         this.control(comp);
         this.move(comp.tick);
         this.checkWallCollisions();
         this.animate(comp.tick);
         this.updateTimers(comp.tick);
+        this.updateDust(baseSpeed, comp.tick);
 
         this.touchSurface = false;
 
@@ -185,6 +256,15 @@ export class Player {
         if (this.pos.y > 192 + 8) {
 
             this.pos.y -= 192 + 16;
+        }
+    }
+
+
+    public preDraw(canvas : RenderTarget) : void {
+
+        for (const d of this.dust) {
+
+            d.draw(canvas);
         }
     }
 
@@ -206,7 +286,7 @@ export class Player {
         const COLLISION_HEIGHT : number = 8;
         const SPEED_THRESHOLD : number = -0.25;
 
-        const LEDGE_TIME : number = 6.0;
+        const LEDGE_TIME : number = 8.0;
 
         const TOP_CHECK_AREA : number = 2.0;
         const BOTTOM_CHECK_AREA : number = 4.0;
@@ -234,6 +314,7 @@ export class Player {
 
             this.ledgeTimer = LEDGE_TIME;
             this.touchSurface = true;
+            this.canDoubleJump = true;
 
             return true;
         }

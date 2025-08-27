@@ -176,11 +176,14 @@ export class RenderTarget {
 
         if (rotation !== undefined) {
 
-            ctx.translate(centerx + dx, centery + dy);
+            ctx.translate(dx, dy);
+
+            ctx.translate(centerx, centerx);
             ctx.rotate(-rotation);
-            
-            dx = -centerx;
-            dy = -centery;
+            ctx.translate(-centerx, -centery);
+
+            dx = 0;
+            dy = 0;
         }
         
         ctx.drawImage(bmp, sx, sy, sw, sh, dx, dy, dw, dh);

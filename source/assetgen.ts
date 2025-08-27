@@ -81,6 +81,8 @@ const GAME_ART_PALETTE_TABLE : (string | undefined) [] = [
     "1034", "3042", "H056", "H056", "10FG", "I0FG", "I0FG", "0000",
     "100J", "100J", "100J", "100J", "100J", "100J", "100J", "100J",
     "100J", "100J", "100J", "100J", "100J", "100J", "100J", "100J",
+    "100J", "100J", "0000", "0000", "0000", "0000", "0000", "0000",
+    "100J", "100J", "0000", "0000", "0000", "0000", "0000", "0000",
 ];
 
 
@@ -171,10 +173,17 @@ const generateTerrainBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
 
 const generateGameObjectsBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
 
-    const canvas : RenderTarget = new RenderTarget(128, 64, false);
+    const canvas : RenderTarget = new RenderTarget(256, 64, false);
 
     // Player
-    for (let i : number = 0; i < 2; ++ i) {
+    for (let i : number = 0; i < 4; ++ i) {
+
+        // Rotating
+        canvas.drawBitmap(bmpBase, Flip.None, 96 + i*16, 0, 0, 64, 16, 16, 16, 16, 8, 8, Math.PI/2*i);
+        if (i >= 2) {
+
+            continue;
+        }
 
         // Idle
         canvas.drawBitmap(bmpBase, Flip.None, i*32, 0, 0, 48, 16, 16);

@@ -64,7 +64,7 @@ export class Stage {
 
         this.wallPosition = (this.wallPosition + this.baseSpeed*comp.tick) % 16.0;
 
-        this.player.update(comp);
+        this.player.update(this.baseSpeed, comp);
 
         for (const p of this.platforms) {
 
@@ -81,10 +81,15 @@ export class Stage {
 
         this.drawBackground(canvas, bmpBackground);
         this.drawWalls(canvas, bmpTerrain);
+        
         for (const p of this.platforms) {
 
             p.draw(canvas, bmpTerrain);
         }
+
+        this.player.preDraw(canvas);
+
+        // Other objects here
 
         this.player.draw(canvas, assets);
     }
