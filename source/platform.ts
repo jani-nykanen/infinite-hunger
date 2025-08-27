@@ -1,4 +1,5 @@
 import { Bitmap, Flip, RenderTarget } from "./gfx.js";
+import { Player } from "./player.js";
 import { sampleWeighted } from "./random.js";
 
 
@@ -274,12 +275,12 @@ export class Platform {
         // Left end point
         if (x > 0 && this.tiles[x - 1] == Tile.Ground) {
 
-            canvas.drawBitmap(bmp, Flip.None, dx - 16, dy, 208, 0, 16, 16);
+            canvas.drawBitmap(bmp, Flip.None, dx - 16, dy, 208, 0, 16, 15);
         }
         // Right end point
         if (x < this.tiles.length - 1 && this.tiles[x + 1] == Tile.Ground) {
 
-            canvas.drawBitmap(bmp, Flip.None, dx + 16, dy, 224, 0, 16, 16);
+            canvas.drawBitmap(bmp, Flip.None, dx + 16, dy, 224, 0, 16, 15);
         }
 
         // Fence
@@ -324,5 +325,18 @@ export class Platform {
             }
         }
         canvas.move(-16, 0);
+    }
+
+
+    public playerCollision(player : Player, baseSpeed : number, tick : number) : void {
+
+        for (let i : number = 0; i < this.tiles.length; ++ i) {
+
+            if (this.tiles[i] == Tile.Gap) {
+
+                continue;
+            }
+            player.floorCollision(16 + i*16, this.y, 16, baseSpeed, tick);
+        }
     }
 }

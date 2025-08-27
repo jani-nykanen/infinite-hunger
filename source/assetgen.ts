@@ -63,6 +63,10 @@ const PALETTE_TABLE : number[] = [
     0b101011000, // F Brown
     0b111101010, // G Yellowish thing
 
+    0b000010000, // H Dark green
+    0b010001000, // I Dark brown
+
+    0b110100111, // J Bright purple
 
 ];
 
@@ -71,10 +75,12 @@ const GAME_ART_PALETTE_TABLE : (string | undefined) [] = [
 
     "1056", "1056", "1056", "1056", "EABC", "EABC", "EABC", "EABC",
     "1089", "1089", "1089", "1089", "EABC", "EABC", "EABC", "EABC",
-    "1056", "1056", "1067", "1067", "1067", "1065", "108D", "108D",
-    "1056", "1056", "1067", "1067", "1067", "1065", "1056", "1056",
-    "1056", "1056", "10B2", "10B2", "10FG", "10FG", "10FG", "0000",
-    "1034", "1034", "1056", "1056", "10FG", "10FG", "10FG", "0000",
+    "H056", "H056", "H067", "H067", "H067", "H065", "E08D", "E08D",
+    "H056", "H056", "H067", "H067", "H067", "H065", "H056", "H056",
+    "H056", "H056", "30B2", "30B2", "10FG", "I0FG", "I0FG", "0000",
+    "1034", "3042", "H056", "H056", "10FG", "I0FG", "I0FG", "0000",
+    "100J", "100J", "100J", "100J", "100J", "100J", "100J", "100J",
+    "100J", "100J", "100J", "100J", "100J", "100J", "100J", "100J",
 ];
 
 
@@ -106,7 +112,7 @@ const generateTerrainBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
     const canvas : RenderTarget = new RenderTarget(256, 32, false);
 
     // Adding missing colors
-    canvas.setColor("#000000");
+    canvas.setColor("#492400");
     canvas.fillRect(211, 7, 27, 4);
 
     canvas.setColor("#ffff6d");
@@ -149,7 +155,7 @@ const generateTerrainBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
     canvas.drawBitmap(bmpBase, Flip.None, 124, 24, 56, 16, 8, 8);
 
     // Flower
-    canvas.drawBitmap(bmpBase, Flip.None, 144, 2, 16, 32, 16, 16);
+    canvas.drawBitmap(bmpBase, Flip.None, 144, 3, 16, 32, 16, 16);
     // Rock
     canvas.drawBitmap(bmpBase, Flip.None, 164, 8, 8, 40, 8, 8);
 
@@ -165,13 +171,51 @@ const generateTerrainBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
 
 const generateGameObjectsBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
 
-    // ...
+    const canvas : RenderTarget = new RenderTarget(128, 64, false);
+
+    // Player
+    for (let i : number = 0; i < 2; ++ i) {
+
+        // Idle
+        canvas.drawBitmap(bmpBase, Flip.None, i*32, 0, 0, 48, 16, 16);
+        // Upper body
+        canvas.drawBitmap(bmpBase, Flip.None, 16 + i*32, 0, 0, 48, 16, 8);
+        // Legs
+        canvas.drawBitmap(bmpBase, Flip.None, 16 + i*32, 8, 16, 48 + i*8, 16, 8);
+        // Jumping
+        canvas.drawBitmap(bmpBase, Flip.None, 64 + i*16, 0, 32 + i*16, 48, 16, 16);
+    }
+    
+    assets.addBitmap(BitmapIndex.GameObjects, canvas.toBitmap());
 }
 
 
 const generateBackground = (assets : Assets) : void => {
 
-    // ...
+    const FOREST_PERIOD : number = 16;
+    const FOREST_SHIFT : number = 64;
+
+    const canvas : RenderTarget = new RenderTarget(256, 160, false);
+
+    // Moon
+    canvas.setColor("#dbffff");
+    canvas.fillEllipse(40, 120, 38, 38);
+    canvas.setColor("#92dbff");
+    canvas.fillEllipse(40 - 18, 120 - 18, 32, 32);
+
+    // Forest
+    canvas.setColor("#4992b6");
+    for (let x : number = 0; x < 256; ++ x) {
+
+        const v : number = x + FOREST_SHIFT;
+        const t : number = ((v % FOREST_PERIOD) - FOREST_PERIOD/2)/(FOREST_PERIOD/2 + 2);
+        const s : number = v/128*Math.PI*2;
+        const dy = 1 + (1.0 - Math.sqrt(1.0 - t*t) + (1.0 + Math.sin(s)))*12;
+
+        canvas.fillRect(x, dy, 1, 80 - dy + 1);
+    }
+
+    assets.addBitmap(BitmapIndex.Background, canvas.toBitmap());
 }
 
 

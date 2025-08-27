@@ -48,11 +48,10 @@ export class Game extends Program {
         const canvas : RenderTarget = this.canvas;
 
         canvas.moveTo();
-        canvas.clearScreen("#00b5ff");
-
+        
         this.stage.draw(canvas, this.components.assets);
 
-        // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.Terrain));
+        // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.GameObjects));
     }
 
 
