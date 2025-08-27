@@ -27,9 +27,10 @@ export class Game extends Program {
         super(audioCtx, 256, 192, [
             {id: Controls.Right, keys: ["ArrowRight", "KeyD"], specialKeys: [], prevent: true},
             {id: Controls.Left, keys: ["ArrowLeft", "KeyA"], specialKeys: [], prevent: true},
-            {id: Controls.Jump, keys: ["ArrowUp", "KeyW", "Space"], specialKeys: [], prevent: true},
+            {id: Controls.Jump, keys: ["ArrowUp", "KeyW"], specialKeys: [], prevent: true},
+            {id: Controls.Tongue, keys: ["Space"], specialKeys: [], prevent: true},
             {id: Controls.Select, keys: ["Space", "Enter"], specialKeys: [], prevent: true},
-            {id: Controls.Pause, keys: ["Escape", "Enter"], specialKeys: [], prevent: false}
+            {id: Controls.Pause, keys: ["Escape", "Enter"], specialKeys: [], prevent: false},
         ]);
 
         this.stage = new Stage();
@@ -51,7 +52,7 @@ export class Game extends Program {
         
         this.stage.draw(canvas, this.components.assets);
 
-        // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.GameObjects));
+        // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.Base));
     }
 
 

@@ -4,8 +4,12 @@ import { Bitmap, Flip, RenderTarget } from "./gfx.js";
 import { ProgramComponents } from "./program.js";
 import { BitmapIndex, Controls } from "./mnemonics.js";
 import { approachValue } from "./utility.js";
-import { ActionState, InputState } from "./controller.js";
+import { ActionState, Controller, InputState } from "./controller.js";
 import { Dust } from "./dust.js";
+
+
+const TONGUE_MAX_TIME : number = 16;
+const TONGUE_LENGTH_FACTOR : number = 6;
 
 
 export class Player {
@@ -25,6 +29,10 @@ export class Player {
     private ledgeTimer : number = 0.0;
     private canDoubleJump : boolean = false;
 
+    private tongueTimer : number = 0.0;
+    private tongueOut : boolean = false;
+    private tongueReturning : boolean = false;
+
     private dust : Dust[];
     private dustTimer : number = 0.0;
 
@@ -41,12 +49,12 @@ export class Player {
     }
 
 
-    private controlJumping(comp : ProgramComponents) : void {
+    private controlJumping(controller : Controller) : void {
 
         const JUMP_TIME : number = 14.0;
         const DOUBLE_JUMP_TIME : number = 8.0;
 
-        const jumpButton : ActionState = comp.controller.getAction(Controls.Jump);
+        const jumpButton : ActionState = controller.getAction(Controls.Jump);
         if (jumpButton.state == InputState.Pressed) {
 
             const canJumpNormally : boolean = this.ledgeTimer > 0.0;
@@ -69,31 +77,57 @@ export class Player {
     }
 
 
-    private control(comp : ProgramComponents) : void {
+    private controlTongue(controller : Controller) : void {
+
+        const tongueButtonState : InputState = controller.getAction(Controls.Tongue).state;
+
+        if (tongueButtonState == InputState.Pressed && !this.tongueOut) {
+
+            this.tongueOut = true;
+            this.tongueReturning = false;
+            this.tongueTimer = 0.0;
+        }
+        else if (this.tongueTimer >= TONGUE_MAX_TIME/2 &&
+            (tongueButtonState & InputState.DownOrPressed) == 0) {
+
+            this.tongueReturning = true;
+        }
+    }
+
+
+    private control(controller : Controller) : void {
 
         const RUN_SPEED : number = 1.4;
         const BASE_GRAVITY : number = 4.0;
 
         let moveDir : number = 0;
-        const left : ActionState = comp.controller.getAction(Controls.Left);
-        const right : ActionState = comp.controller.getAction(Controls.Right);
+        const left : ActionState = controller.getAction(Controls.Left);
+        const right : ActionState = controller.getAction(Controls.Right);
         const maxStamp : number = Math.max(left.timestamp, right.timestamp);
+
+        let flipFlag : Flip = this.flip;
 
         if ((left.state & InputState.DownOrPressed) != 0 && left.timestamp >= maxStamp) {
 
             moveDir = -1;
-            this.flip = Flip.Horizontal;
+            flipFlag = Flip.Horizontal;
         }
         else if ((right.state & InputState.DownOrPressed) != 0 && right.timestamp >= maxStamp) {
 
             moveDir = 1;
-            this.flip = Flip.None;
+            flipFlag = Flip.None;
+        }
+
+        if (!this.tongueOut) {
+
+            this.flip = flipFlag;
         }
 
         this.speedTarget.x = moveDir*RUN_SPEED;
         this.speedTarget.y = BASE_GRAVITY;
 
-        this.controlJumping(comp);
+        this.controlJumping(controller);
+        this.controlTongue(controller);
     }
 
 
@@ -135,7 +169,8 @@ export class Player {
 
         if (!this.touchSurface) {
 
-            if (!this.canDoubleJump && 
+            if (!this.tongueOut &&
+                !this.canDoubleJump && 
                 this.speed.y < DOUBLE_JUMP_ANIMATION_MAX_SPEED) {
 
                 this.animateSprite(6, 9, 4, tick);
@@ -181,6 +216,27 @@ export class Player {
 
             this.speed.y = JUMP_SPEED;
             this.jumpTimer -= tick;
+        }
+
+        if (this.tongueOut) {
+
+            if (this.tongueReturning) {
+
+                this.tongueTimer -= tick;
+                if (this.tongueTimer <= 0.0) {
+
+                    this.tongueOut = false;
+                }
+            }
+            else {
+
+                this.tongueTimer += tick;
+                if (this.tongueTimer >= TONGUE_MAX_TIME) {
+
+                    this.tongueTimer = TONGUE_MAX_TIME;
+                    this.tongueReturning = true;
+                }
+            }
         }
     }
 
@@ -231,6 +287,7 @@ export class Player {
 
         const COLLISION_WIDTH : number = 8;
 
+        // Body collision
         if (this.speed.x < 0.0 && this.pos.x < 16 + COLLISION_WIDTH/2) {
 
             this.pos.x = 16 + COLLISION_WIDTH/2;
@@ -241,17 +298,45 @@ export class Player {
             this.pos.x = 240 - COLLISION_WIDTH/2;
             this.speed.x = 0.0;
         }
+
+        if (this.tongueOut && !this.tongueReturning) {
+
+            const dir : number = this.flip == Flip.None ? 1 : -1;
+            const dx : number = this.pos.x + dir*this.tongueTimer*TONGUE_LENGTH_FACTOR;
+
+            if ((dir < 0 && dx < 16) || (dir > 0 && dx > 240)) {
+
+                this.tongueReturning = true;
+            }
+        }
+    }
+
+
+    private drawTongue(canvas : RenderTarget, bmp : Bitmap) : void {
+
+        if (!this.tongueOut) {
+
+            return;
+        }
+
+        const len : number = ((this.tongueTimer) | 0)*TONGUE_LENGTH_FACTOR;
+
+        const dx : number = this.flip == Flip.None ? this.pos.x + 1 : this.pos.x - 1 - len + 8;
+        const dy : number = this.pos.y - 1;
+
+        canvas.drawBitmap(bmp, Flip.None, dx, dy, 0, 64, 8, 8, len - 8, 8);
+        canvas.drawBitmap(bmp, this.flip, dx + (this.flip == Flip.None ? len : 0) - 8, dy, 8, 64, 8, 8);
     }
 
 
     public update(baseSpeed : number, comp : ProgramComponents) : void {
 
-        this.control(comp);
+        this.control(comp.controller);
         this.move(comp.tick);
-        this.checkWallCollisions();
         this.animate(comp.tick);
         this.updateTimers(comp.tick);
         this.updateDust(baseSpeed, comp.tick);
+        this.checkWallCollisions();
 
         this.touchSurface = false;
 
@@ -292,17 +377,24 @@ export class Player {
         // Face
         let faceOffX : number = -this.flip*2;
         let faceOffY : number = 0;
-        if (this.frame == 4) {
+        let faceMode : number = Number(this.tongueOut);
+        if (!this.tongueOut) {
 
-            faceOffY = -1;
-        }
-        else if (this.frame == 5) {
+            if (this.frame == 4) {
 
-            faceOffY = 1;
+                faceOffY = -1;
+            }
+            else if (this.frame == 5) {
+
+                faceOffY = 1;
+            }
         }
         canvas.drawBitmap(bmpBase, this.flip, 
             dx + 5 + faceOffX, dy + 3 + faceOffY, 
-            56, 32, 8, 8);
+            56, 32 + faceMode*8, 8, 8);
+
+        // Tongue
+        this.drawTongue(canvas, bmpBase);
     }
 
 

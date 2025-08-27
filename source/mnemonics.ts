@@ -26,6 +26,8 @@ export const enum Controls {
     Right = 0,
     Left = 1,
     Jump = 2,
-    Select = 3,
-    Pause = 4,
+    Tongue = 3,
+
+    Select = 4,
+    Pause = 5,
 }
