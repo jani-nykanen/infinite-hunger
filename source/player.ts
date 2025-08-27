@@ -212,12 +212,15 @@ export class Player {
                     break;
                 }
             }
-            if (dust == null) {
+            if (dust === undefined) {
 
                 dust = new Dust();
                 this.dust.push(dust);
             }
-            dust!.spawn(this.pos.x, this.pos.y + 4, 1.0/45.0, 6);
+            dust!.spawn(
+                this.pos.x, 
+                this.pos.y + 4, 
+                1.0/45.0, 6);
 
             this.dustTimer -= DUST_TIME;
         }
@@ -271,12 +274,35 @@ export class Player {
 
     public draw(canvas : RenderTarget, assets : Assets) : void {
 
-        const bmp : Bitmap = assets.getBitmap(BitmapIndex.GameObjects);
+        const bmpObjects : Bitmap = assets.getBitmap(BitmapIndex.GameObjects);
+        const bmpBase : Bitmap = assets.getBitmap(BitmapIndex.Base);
 
         const dx : number = this.pos.x - 8;
         const dy : number = this.pos.y - 7;
 
-        canvas.drawBitmap(bmp, this.flip, dx, dy, this.frame*16, 0, 16, 16);
+        // Body
+        canvas.drawBitmap(bmpObjects, this.flip, dx, dy, this.frame*16, 0, 16, 16);
+
+        // No face if spinning
+        if (this.frame > 5) {
+
+            return;
+        }
+
+        // Face
+        let faceOffX : number = -this.flip*2;
+        let faceOffY : number = 0;
+        if (this.frame == 4) {
+
+            faceOffY = -1;
+        }
+        else if (this.frame == 5) {
+
+            faceOffY = 1;
+        }
+        canvas.drawBitmap(bmpBase, this.flip, 
+            dx + 5 + faceOffX, dy + 3 + faceOffY, 
+            56, 32, 8, 8);
     }
 
 

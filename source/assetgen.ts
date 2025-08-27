@@ -77,12 +77,12 @@ const GAME_ART_PALETTE_TABLE : (string | undefined) [] = [
     "1089", "1089", "1089", "1089", "EABC", "EABC", "EABC", "EABC",
     "H056", "H056", "H067", "H067", "H067", "H065", "E08D", "E08D",
     "H056", "H056", "H067", "H067", "H067", "H065", "H056", "H056",
-    "H056", "H056", "30B2", "30B2", "10FG", "I0FG", "I0FG", "0000",
-    "1034", "3042", "H056", "H056", "10FG", "I0FG", "I0FG", "0000",
+    "H056", "H056", "30B2", "30B2", "10FG", "I0FG", "I0FG", "000J",
+    "1034", "3042", "H056", "H056", "10FG", "I0FG", "I0FG", "000J",
     "100J", "100J", "100J", "100J", "100J", "100J", "100J", "100J",
     "100J", "100J", "100J", "100J", "100J", "100J", "100J", "100J",
-    "100J", "100J", "0000", "0000", "0000", "0000", "0000", "0000",
-    "100J", "100J", "0000", "0000", "0000", "0000", "0000", "0000",
+    "0000", "0000", "0000", "0000", "0000", "0000", "0000", "0000",
+    "0000", "0000", "0000", "0000", "0000", "0000", "0000", "0000",
 ];
 
 
@@ -176,23 +176,28 @@ const generateGameObjectsBitmap = (assets : Assets, bmpBase : Bitmap) : void => 
     const canvas : RenderTarget = new RenderTarget(256, 64, false);
 
     // Player
-    for (let i : number = 0; i < 4; ++ i) {
+    for (let i : number = 0; i < 6; ++ i) {
+
+        // Upper body
+        canvas.drawBitmap(bmpBase, Flip.None, i*16, 0, 0, 48, 16, (i == 0 || i == 2) ? 16 : 8);
+        if (i >= 4) {
+
+            continue;
+        }
 
         // Rotating
-        canvas.drawBitmap(bmpBase, Flip.None, 96 + i*16, 0, 0, 64, 16, 16, 16, 16, 8, 8, Math.PI/2*i);
+        canvas.drawBitmap(bmpBase, Flip.None, 96 + i*16, 0, 48, 48, 16, 16, 16, 16, 8, 8, -Math.PI/2*i);
         if (i >= 2) {
 
             continue;
         }
 
-        // Idle
-        canvas.drawBitmap(bmpBase, Flip.None, i*32, 0, 0, 48, 16, 16);
         // Upper body
         canvas.drawBitmap(bmpBase, Flip.None, 16 + i*32, 0, 0, 48, 16, 8);
         // Legs
         canvas.drawBitmap(bmpBase, Flip.None, 16 + i*32, 8, 16, 48 + i*8, 16, 8);
         // Jumping
-        canvas.drawBitmap(bmpBase, Flip.None, 64 + i*16, 0, 32 + i*16, 48, 16, 16);
+        canvas.drawBitmap(bmpBase, Flip.None, 64 + i*16, 8, 32, 48 + i*8, 16, 8);
     }
     
     assets.addBitmap(BitmapIndex.GameObjects, canvas.toBitmap());
