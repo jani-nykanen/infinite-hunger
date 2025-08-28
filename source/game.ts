@@ -25,17 +25,16 @@ export class Game extends Program {
     constructor(audioCtx : AudioContext) {
 
         super(audioCtx, 256, 192, [
-            {id: Controls.Right, keys: ["ArrowRight", "KeyD"], specialKeys: [], prevent: true},
-            {id: Controls.Left, keys: ["ArrowLeft", "KeyA"], specialKeys: [], prevent: true},
-            {id: Controls.Jump, keys: ["ArrowUp", "KeyW"], specialKeys: [], prevent: true},
-            {id: Controls.Tongue, keys: ["Space"], specialKeys: [], prevent: true},
+            {id: Controls.Right, keys: ["ArrowRight"], specialKeys: [], prevent: true},
+            {id: Controls.Left, keys: ["ArrowLeft"], specialKeys: [], prevent: true},
+            {id: Controls.Jump, keys: ["Space", "KeyZ"], specialKeys: [], prevent: true},
+            {id: Controls.Tongue, keys: ["ControlLeft", "KeyX"], specialKeys: [], prevent: true},
             {id: Controls.Select, keys: ["Space", "Enter"], specialKeys: [], prevent: true},
             {id: Controls.Pause, keys: ["Escape", "Enter"], specialKeys: [], prevent: false},
         ]);
 
         this.stage = new Stage();
     }
-
 
 
     private updateGameScene() : void {
@@ -52,7 +51,7 @@ export class Game extends Program {
         
         this.stage.draw(canvas, this.components.assets);
 
-        // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.Base));
+        // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.GameObjects));
     }
 
 

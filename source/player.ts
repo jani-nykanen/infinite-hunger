@@ -6,19 +6,16 @@ import { BitmapIndex, Controls } from "./mnemonics.js";
 import { approachValue } from "./utility.js";
 import { ActionState, Controller, InputState } from "./controller.js";
 import { Dust } from "./dust.js";
+import { GameObject } from "./gameobject.js";
+import { nextExistingObject } from "./existingobject.js";
 
 
 const TONGUE_MAX_TIME : number = 16;
 const TONGUE_LENGTH_FACTOR : number = 6;
 
 
-export class Player {
+export class Player extends GameObject {
 
-
-    private pos : Vector;
-    private speed : Vector;
-    private speedTarget : Vector;
-    private friction : Vector;
 
     private frame : number = 0;
     private animationTimer : number = 0;
@@ -39,11 +36,7 @@ export class Player {
 
     constructor(x : number, y : number) {
 
-        this.pos = new Vector(x, y);
-
-        this.speed = Vector.zero();
-        this.speedTarget = Vector.zero();
-        this.friction = new Vector(0.20, 0.15);
+        super(x, y, true);
 
         this.dust = new Array<Dust> ();
     }
@@ -128,16 +121,6 @@ export class Player {
 
         this.controlJumping(controller);
         this.controlTongue(controller);
-    }
-
-
-    private move(tick : number) : void {
-
-        this.speed.x = approachValue(this.speed.x, this.speedTarget.x, this.friction.x*tick);
-        this.speed.y = approachValue(this.speed.y, this.speedTarget.y, this.friction.y*tick);
-
-        this.pos.x += this.speed.x*tick;
-        this.pos.y += this.speed.y*tick;
     }
 
 
@@ -259,21 +242,7 @@ export class Player {
         this.dustTimer += tick;
         if (this.dustTimer >= DUST_TIME) {
 
-            let dust : Dust | undefined = undefined;
-            for (const d of this.dust) {
-
-                if (!d.doesExist()) {
-
-                    dust = d;
-                    break;
-                }
-            }
-            if (dust === undefined) {
-
-                dust = new Dust();
-                this.dust.push(dust);
-            }
-            dust!.spawn(
+            nextExistingObject<Dust>(this.dust, Dust).spawn(
                 this.pos.x, 
                 this.pos.y + 4, 
                 1.0/45.0, 6);

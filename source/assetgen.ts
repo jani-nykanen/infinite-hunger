@@ -71,6 +71,12 @@ const PALETTE_TABLE : number[] = [
     0b101001000, // K Red
     0b111011000, // L Orange
 
+    0b011101110, // M Blue
+    0b110111111, // N Very bright blue
+
+    0b110100000, // O Brownish thing
+    0b111110011, // P Yello
+
 ];
 
 
@@ -84,8 +90,8 @@ const GAME_ART_PALETTE_TABLE : (string | undefined) [] = [
     "1034", "3042", "H056", "H056", "10FG", "I0FG", "I0FG", "000J",
     "100J", "100J", "100J", "100J", "100J", "100J", "100J", "100J",
     "100J", "100J", "100J", "100J", "100J", "100J", "100J", "100J",
-    "10KL", "10KL", "0000", "0000", "0000", "0000", "0000", "0000",
-    "0000", "0000", "0000", "0000", "0000", "0000", "0000", "0000",
+    "10KL", "10KL", "10OP", "10MN", "0000", "0000", "0000", "0000",
+    "0000", "0000", "10OP", "10MN", "0000", "0000", "0000", "0000",
 ];
 
 
@@ -203,6 +209,17 @@ const generateGameObjectsBitmap = (assets : Assets, bmpBase : Bitmap) : void => 
         canvas.drawBitmap(bmpBase, Flip.None, 64 + i*16, 8, 32, 48 + i*8, 16, 8);
     }
     
+    // Enemy: fly
+    for (let i : number = 0; i < 2; ++ i) {
+    
+        canvas.drawBitmap(bmpBase, Flip.None, 4 + i*16, 16, 16, 64, 8, 16);
+
+        // Left wing
+        canvas.drawBitmap(bmpBase, Flip.None, i*16, 16, 24 + i*4, 64, 4, 16);
+        // Right wing
+        canvas.drawBitmap(bmpBase, Flip.Horizontal, i*16 + 12, 16, 24 + i*4, 64, 4, 16);
+    }
+
     assets.addBitmap(BitmapIndex.GameObjects, canvas.toBitmap());
 }
 

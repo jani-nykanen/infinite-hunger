@@ -1,8 +1,9 @@
 import { Vector } from "./vector.js";
 import { RenderTarget } from "./gfx.js";
+import { ExistingObject } from "./existingobject.js";
 
 
-export class Dust {
+export class Dust implements ExistingObject {
 
 
     private pos : Vector;
