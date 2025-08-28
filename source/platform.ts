@@ -291,7 +291,7 @@ export class Platform {
     }
 
 
-    public update(baseSpeed : number, tick : number) : void {
+    public update(baseSpeed : number, tick : number) : boolean {
 
         this.y += baseSpeed*tick;
 
@@ -299,7 +299,10 @@ export class Platform {
 
             this.y -= (this.screenHeight - this.initialShift);
             this.generateTiles();
+
+            return true;
         }
+        return false;
     }
 
 
@@ -338,5 +341,21 @@ export class Platform {
             }
             player.floorCollision(16 + i*16, this.y, 16, baseSpeed, tick);
         }
+    }
+
+
+    public isGround(x : number) : boolean {
+
+        if (x < 0 || x >= this.tiles.length) {
+
+            return false;
+        }
+        return this.tiles[x] != Tile.Gap;
+    }
+
+
+    public getY() : number {
+
+        return this.y;
     }
 }

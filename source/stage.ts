@@ -4,6 +4,12 @@ import { ProgramComponents } from "./program.js";
 import { BitmapIndex } from "./mnemonics.js";
 import { Platform } from "./platform.js";
 import { Player } from "./player.js";
+import { Enemy, EnemyType } from "./enemy.js";
+import { nextExistingObject } from "./existingobject.js";
+import { sampleWeighted } from "./random.js";
+
+
+const ENEMY_WEIGHTS : number[] = [0.50, 0.50];
 
 
 export class Stage {
@@ -14,6 +20,7 @@ export class Stage {
 
     private platforms : Platform[];
     private player : Player;
+    private enemies : Enemy[];
 
     
     constructor() {
@@ -26,6 +33,20 @@ export class Stage {
         }
 
         this.player = new Player(128, 32);
+        this.enemies = new Array<Enemy> ();
+    }
+
+
+    private generateEnemies(platform : Platform) : void {
+
+        const x : number = 2 + ((Math.random()*12) | 0);
+
+        const dx : number = x*16 + 8;
+        const dy : number = platform.getY() - 24;
+
+        const type : EnemyType = (1 + sampleWeighted(ENEMY_WEIGHTS)) as EnemyType;
+
+        nextExistingObject<Enemy>(this.enemies, Enemy).spawn(dx, dy, type, platform);
     }
 
 
@@ -66,9 +87,17 @@ export class Stage {
 
         this.player.update(this.baseSpeed, comp);
 
+        for (const e of this.enemies) {
+
+            e.update(this.baseSpeed, comp);
+        }
+
         for (const p of this.platforms) {
 
-            p.update(this.baseSpeed, comp.tick);
+            if (p.update(this.baseSpeed, comp.tick)) {
+
+                this.generateEnemies(p);
+            }
             p.playerCollision(this.player, this.baseSpeed, comp.tick);
         }
     }
@@ -78,6 +107,7 @@ export class Stage {
 
         const bmpTerrain : Bitmap = assets.getBitmap(BitmapIndex.Terrain);
         const bmpBackground : Bitmap = assets.getBitmap(BitmapIndex.Background);
+        const bmpObjects : Bitmap = assets.getBitmap(BitmapIndex.GameObjects);
 
         this.drawBackground(canvas, bmpBackground);
         this.drawWalls(canvas, bmpTerrain);
@@ -85,6 +115,11 @@ export class Stage {
         for (const p of this.platforms) {
 
             p.draw(canvas, bmpTerrain);
+        }
+
+        for (const e of this.enemies) {
+
+            e.draw(canvas, bmpObjects);
         }
 
         this.player.preDraw(canvas);
