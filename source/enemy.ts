@@ -11,6 +11,7 @@ export const enum EnemyType {
     Coin = 0, // Yes, coin is an enemy
     StaticBee = 1,
     MovingBee = 2,
+    Slime = 3,
 }
 
 
@@ -72,6 +73,21 @@ export class Enemy extends GameObject {
     }
 
 
+    private updateSlime(tick : number) : void {
+
+        const FRAME_TIME : number = 8;
+
+        this.frameTimer += tick;
+        if (this.frameTimer >= FRAME_TIME) {
+
+            this.frame = (this.frame + 1) % 4;
+            this.frameTimer -= FRAME_TIME;
+        }
+
+        this.pos.y = this.referencePlatform.getY() - 7;
+    }
+
+
     private drawStaticBee(canvas : RenderTarget, bmp : Bitmap) : void {
 
         canvas.drawBitmap(bmp, Flip.None, this.pos.x - 8, this.pos.y - 8,
@@ -83,6 +99,13 @@ export class Enemy extends GameObject {
 
         canvas.drawBitmap(bmp, Flip.None, this.pos.x - 8, this.pos.y - 8,
             this.frame*16, 16, 16, 16, 16, 16, 8, 8, -Math.PI/2*this.direction);
+    }
+
+
+    private drawSlime(canvas : RenderTarget, bmp : Bitmap) : void {
+
+        canvas.drawBitmap(bmp, Flip.None, this.pos.x - 8, this.pos.y - 8,
+            32 + this.frame*16, 16, 16, 16);
     }
 
 
@@ -103,6 +126,11 @@ export class Enemy extends GameObject {
         case EnemyType.MovingBee:
 
             this.updateMovingBee(baseSpeed, comp.tick);
+            break;
+
+        case EnemyType.Slime:
+
+            this.updateSlime(comp.tick);
             break;
 
         default:
@@ -133,6 +161,11 @@ export class Enemy extends GameObject {
             this.drawMovingBee(canvas, bmp);
             break;
 
+        case EnemyType.Slime:
+
+            this.drawSlime(canvas, bmp);
+            break;
+
         default:
             break;
         }
@@ -151,6 +184,26 @@ export class Enemy extends GameObject {
         this.direction = Math.random() > 0.5 ? 1 : -1;
 
         this.referencePlatform = referencePlatform;
+
+        this.frame = 0;
+        this.frameTimer = 0.0;
+
+        switch (this.type) {
+
+        case EnemyType.Slime:
+
+            this.frame = (Math.random()*4) | 0;
+            break;
+
+        case EnemyType.MovingBee:
+        case EnemyType.StaticBee:
+
+            this.pos.y -= 16;
+            break;
+
+        default:
+            break;
+        }
 
         this.exists = true;
     }

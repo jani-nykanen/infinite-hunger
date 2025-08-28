@@ -75,7 +75,9 @@ const PALETTE_TABLE : number[] = [
     0b110111111, // N Very bright blue
 
     0b110100000, // O Brownish thing
-    0b111110011, // P Yello
+    0b111110011, // P Yellow
+
+    0b001011100, // Q Darker blue
 
 ];
 
@@ -90,8 +92,8 @@ const GAME_ART_PALETTE_TABLE : (string | undefined) [] = [
     "1034", "3042", "H056", "H056", "10FG", "I0FG", "I0FG", "000J",
     "100J", "100J", "100J", "100J", "100J", "100J", "100J", "100J",
     "100J", "100J", "100J", "100J", "100J", "100J", "100J", "100J",
-    "10KL", "10KL", "10OP", "10MN", "0000", "0000", "0000", "0000",
-    "0000", "0000", "10OP", "10MN", "0000", "0000", "0000", "0000",
+    "10KL", "10KL", "10OP", "10MN", "10MN", "10MQ", "10MN", "10MQ",
+    "10Q2", "10KL", "10OP", "10MN", "10MN", "10MQ", "10MN", "10MQ",
 ];
 
 
@@ -182,6 +184,8 @@ const generateTerrainBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
 
 const generateGameObjectsBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
 
+    const FACE_OFFSET : number[] = [0, 2, 0, -2];
+
     const canvas : RenderTarget = new RenderTarget(256, 64, false);
 
     // Player
@@ -209,15 +213,31 @@ const generateGameObjectsBitmap = (assets : Assets, bmpBase : Bitmap) : void => 
         canvas.drawBitmap(bmpBase, Flip.None, 64 + i*16, 8, 32, 48 + i*8, 16, 8);
     }
     
-    // Enemy: fly
-    for (let i : number = 0; i < 2; ++ i) {
-    
-        canvas.drawBitmap(bmpBase, Flip.None, 4 + i*16, 16, 16, 64, 8, 16);
+    // Enemies
+    for (let i : number = 0; i < 4; ++ i) {
+        
+        if (i < 2) {
 
-        // Left wing
-        canvas.drawBitmap(bmpBase, Flip.None, i*16, 16, 24 + i*4, 64, 4, 16);
-        // Right wing
-        canvas.drawBitmap(bmpBase, Flip.Horizontal, i*16 + 12, 16, 24 + i*4, 64, 4, 16);
+            // Fly base
+            canvas.drawBitmap(bmpBase, Flip.None, 4 + i*16, 16, 16, 64, 8, 16);
+            // Left wing
+            canvas.drawBitmap(bmpBase, Flip.None, i*16, 16, 24 + i*4, 64, 4, 16);
+            // Right wing
+            canvas.drawBitmap(bmpBase, Flip.Horizontal, i*16 + 12, 16, 24 + i*4, 64, 4, 16);
+
+            // Slime base body
+            canvas.drawBitmap(bmpBase, Flip.None, 32 + i*32, 16, 32, 64, 16, 16);
+            // Slime top body
+            canvas.drawBitmap(bmpBase, Flip.None, 48 + i*32, 16 + (i == 0 ? 2 : -1), 32, 64, 16, i == 0 ? 7 : 9);
+            // Slime lower body
+            canvas.drawBitmap(bmpBase, Flip.None, 48 + i*32, 24, 48, 64 + i*8, 16, 8);
+        }
+
+        // Slime eyes & nose
+        for (let j : number = 0; j < 2; ++ j) {
+
+            canvas.drawBitmap(bmpBase, Flip.None, 32 + 4 + i*16, 16 + 6 + FACE_OFFSET[i], j*8, 72, 8, 8);
+        }
     }
 
     assets.addBitmap(BitmapIndex.GameObjects, canvas.toBitmap());

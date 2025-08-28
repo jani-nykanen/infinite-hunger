@@ -9,7 +9,7 @@ import { nextExistingObject } from "./existingobject.js";
 import { sampleWeighted } from "./random.js";
 
 
-const ENEMY_WEIGHTS : number[] = [0.50, 0.50];
+const ENEMY_WEIGHTS : number[] = [0.33, 0.33, 0.34];
 
 
 export class Stage {
@@ -37,14 +37,40 @@ export class Stage {
     }
 
 
+    private findFreeTile(platform : Platform) : number {
+
+        const startPos : number = (Math.random()*14) | 0;
+
+        let x : number = startPos;
+        do {
+
+            if (platform.isGround(x)) {
+
+                return x + 1;
+            }
+            x = (x + 1) % 14;
+        }
+        while(x != startPos);
+
+        return 0;
+    }
+
+
     private generateEnemies(platform : Platform) : void {
 
-        const x : number = 2 + ((Math.random()*12) | 0);
-
-        const dx : number = x*16 + 8;
-        const dy : number = platform.getY() - 24;
+        let x : number = 1 + ((Math.random()*14) | 0);
 
         const type : EnemyType = (1 + sampleWeighted(ENEMY_WEIGHTS)) as EnemyType;
+        if (type == EnemyType.Slime) {
+
+            x = this.findFreeTile(platform);
+            if (x == 0) {
+
+                return;
+            }
+        }
+        const dx : number = x*16 + 8;
+        const dy : number = platform.getY() - 8;
 
         nextExistingObject<Enemy>(this.enemies, Enemy).spawn(dx, dy, type, platform);
     }
