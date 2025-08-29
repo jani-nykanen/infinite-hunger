@@ -191,9 +191,14 @@ const generateTerrainBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
 
 const generateGameObjectsBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
 
+    const DEATH_COLORS : string[][] = [
+        ["#ffb452", "#fffebb"],
+        ["#b6b6b6", "#ffffff"]
+    ];
+
     const FACE_OFFSET : number[] = [0, 2, 0, -2];
 
-    const canvas : RenderTarget = new RenderTarget(256, 64, false);
+    const canvas : RenderTarget = new RenderTarget(256, 128, false);
 
     // Player
     for (let i : number = 0; i < 6; ++ i) {
@@ -276,6 +281,38 @@ const generateGameObjectsBitmap = (assets : Assets, bmpBase : Bitmap) : void => 
 
         // Spikeball spikes
         canvas.drawBitmap(bmpBase, Flip.None, 128 + 11, 16 + 11, 24, 80, 16, 16, 16, 16, 5, 5, -Math.PI/2*i);
+    }
+
+
+    // Death animations
+    for (let j : number = 0; j < 2; ++ j) {
+
+        const color1 : string = DEATH_COLORS[j][0];
+        const color2 : string = DEATH_COLORS[j][1];
+
+        for (let i : number = 0; i < 4; ++ i) {
+
+            const dx : number = i*32 + 16;
+            const dy : number = 48 + 16 + j*32;
+
+            if (i < 2) {
+
+                const r : number = 8 + i*4;
+
+                canvas.setColor(color1);
+                canvas.fillEllipse(dx, dy, r);
+
+                canvas.setColor(color2);
+                canvas.fillEllipse(dx - 1, dy - 1, r - 2);
+                continue;
+            }
+
+            canvas.setColor(color1);
+            canvas.fillRing(dx, dy, 5 + (i - 2)*4, 12);
+        
+            canvas.setColor(color2);
+            canvas.fillRing(dx - 1, dy - 1, 6 + (i - 2)*2, 10);
+        }
     }
 
     assets.addBitmap(BitmapIndex.GameObjects, canvas.toBitmap());

@@ -69,6 +69,12 @@ export class Vector {
     }
 
 
+    public distanceTo(target : Vector) : number {
+
+        return Math.hypot(target.x - this.x, target.y - this.y);
+    }
+
+
     static zero() : Vector {
 
         return new Vector();

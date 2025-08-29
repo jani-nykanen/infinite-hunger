@@ -30,9 +30,12 @@ export class Player extends GameObject {
     private tongueTimer : number = 0.0;
     private tongueOut : boolean = false;
     private tongueReturning : boolean = false;
+    private stickyObject : GameObject | null = null;
 
     private dust : Dust[];
     private dustTimer : number = 0.0;
+
+    private hurtTimer : number = 0;
 
 
     constructor(x : number, y : number) {
@@ -82,6 +85,8 @@ export class Player extends GameObject {
             this.tongueOut = true;
             this.tongueReturning = false;
             this.tongueTimer = 0.0;
+
+            this.stickyObject = null;
         }
         else if (this.tongueTimer >= TONGUE_MAX_TIME/2 &&
             (tongueButtonState & InputState.DownOrPressed) == 0) {
@@ -193,6 +198,11 @@ export class Player extends GameObject {
 
         const JUMP_SPEED : number = -2.5;
 
+        if (this.hurtTimer > 0.0) {
+
+            this.hurtTimer -= tick;
+        }
+
         if (this.ledgeTimer > 0.0) {
 
             this.ledgeTimer -= tick;
@@ -208,7 +218,9 @@ export class Player extends GameObject {
 
             if (this.tongueReturning) {
 
-                this.tongueTimer -= tick;
+                const returnSpeed : number = this.stickyObject !== null ? 0.67 : 1.0;
+
+                this.tongueTimer -= returnSpeed*tick;
                 if (this.tongueTimer <= 0.0) {
 
                     this.tongueOut = false;
@@ -322,6 +334,11 @@ export class Player extends GameObject {
 
     public preDraw(canvas : RenderTarget) : void {
 
+        if (this.hurtTimer > 0 && Math.floor(this.hurtTimer/4) % 2 == 0) {
+
+            return;
+        }
+
         for (const d of this.dust) {
 
             d.draw(canvas);
@@ -336,6 +353,11 @@ export class Player extends GameObject {
 
         const dx : number = this.pos.x - 8;
         const dy : number = this.pos.y - 7;
+
+        if (this.hurtTimer > 0 && Math.floor(this.hurtTimer/4) % 2 == 0) {
+
+            return;
+        }
 
         // Body
         canvas.drawBitmap(bmpObjects, this.flip, dx, dy, this.frame*16, 0, 16, 16);
@@ -409,5 +431,55 @@ export class Player extends GameObject {
             return true;
         }
         return false;
+    }
+
+
+    public bounce() : void {
+
+        this.speed.y = -3.0;
+        this.jumpTimer = 0.0;
+        this.canDoubleJump = true;
+    }
+
+
+    public setStickyObject(o : GameObject) : void {
+
+        this.stickyObject = o;
+        this.tongueReturning = true;
+    }
+
+
+    public isTongueActive() : boolean {
+
+        return this.tongueOut;
+    }
+
+
+    public getTonguePosition() : Vector {
+        
+        const dir : number = this.flip == Flip.None ? 1 : -1;
+        const dx : number = this.pos.x + dir*this.tongueTimer*TONGUE_LENGTH_FACTOR;
+
+        return new Vector(dx, this.pos.y);
+    }
+
+
+    public getStickyObject() : GameObject | null {
+
+        return this.stickyObject;
+    }
+
+
+    public hurt(comp : ProgramComponents) : void {
+
+        const HURT_TIME : number = 60;
+
+        if (this.hurtTimer > 0.0) {
+
+            return;
+        }
+        
+        // TODO: Sound effect
+        this.hurtTimer = HURT_TIME;
     }
 }

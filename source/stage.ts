@@ -150,6 +150,7 @@ export class Stage {
         for (const e of this.enemies) {
 
             e.update(this.baseSpeed, comp);
+            e.playerCollision(this.player, comp);
         }
 
         for (const c of this.coins) {
@@ -183,20 +184,44 @@ export class Stage {
             p.draw(canvas, bmpTerrain);
         }
 
+        this.player.preDraw(canvas);
+
+        // Objects behind the player
         for (const e of this.enemies) {
 
+            if (e.isSticky()) {
+
+                continue;
+            }
             e.draw(canvas, bmpObjects);
         }
-
         for (const c of this.coins) {
 
+            if (c.isSticky()) {
+
+                continue;
+            }
             c.draw(canvas, bmpObjects);
         }
 
-        this.player.preDraw(canvas);
-
-        // Other objects here
-
         this.player.draw(canvas, assets);
+
+        // Objects in front of the player
+        for (const e of this.enemies) {
+
+            if (!e.isSticky()) {
+
+                continue;
+            }
+            e.draw(canvas, bmpObjects);
+        }
+        for (const c of this.coins) {
+
+            if (!c.isSticky()) {
+
+                continue;
+            }
+            c.draw(canvas, bmpObjects);
+        }
     }
 }

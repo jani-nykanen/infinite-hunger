@@ -9,6 +9,9 @@ import { Rectangle } from "./rectangle.js";
 
 
 const CHAINBALL_DISTANCE : number = 32;
+const ENEMY_RADIUS : number[] = [
+    9, 8, 8, 9, 10, 11, 11
+];
 
 
 export const enum EnemyType {
@@ -34,6 +37,10 @@ export class Enemy extends GameObject {
     private frameTimer : number = 0;
     private specialTimer : number = 0.0;
     private direction : number = 0;
+    private deathTimer : number = 0.0;
+    private sticky : boolean = false;
+
+    private specialFlip : Flip = Flip.None;
 
     private referencePlatform : Platform | undefined = undefined;
 
@@ -48,10 +55,14 @@ export class Enemy extends GameObject {
 
     private die(baseSpeed : number, tick : number) : boolean {
 
+        const deathSpeed : number = 1.0/15.0;
+
+        this.deathTimer += deathSpeed*tick;
+        this.frame = (this.deathTimer*4) | 0;
+
         this.pos.y += baseSpeed;
 
-        // TEMP
-        return true;
+        return this.deathTimer >= 1.0;
     }
 
 
@@ -146,32 +157,112 @@ export class Enemy extends GameObject {
         this.pos.x = this.initialPos.x + Math.cos(this.specialTimer)*this.direction*CHAINBALL_DISTANCE;
         this.pos.y = this.referencePlatform!.getY() + 8 + Math.sin(this.specialTimer)*CHAINBALL_DISTANCE;
     }
+    
+
+    private kill() : void {
+
+        this.dying = true;
+        this.deathTimer = 0.0;
+        this.frame = 0;
+    }
+
+
+    private checkStompCollision(player : Player, comp : ProgramComponents) : boolean {
+
+        const STOMP_WIDTH : number = 28;
+        const STOMP_YOFF : number = 12.0;
+        const NEAR_MARGIN : number = 2.0;
+        const FAR_MARGIN : number = 8.0;
+        const MIN_SPEED : number = -1.0;
+
+        if (this.sticky ||
+            this.type == EnemyType.Coin || 
+            this.type == EnemyType.Spikeball || 
+            this.type == EnemyType.ChainBall) {
+
+            return false;
+        }
+
+        const ppos : Vector = player.getPosition();
+        const pspeed : Vector = player.getSpeed();
+        const top : number = this.pos.y - STOMP_YOFF;
+
+        if (pspeed.y < MIN_SPEED || 
+            ppos.x < this.pos.x - STOMP_WIDTH/2 || 
+            ppos.x > this.pos.x + STOMP_WIDTH/2 ||
+            ppos.y < top - NEAR_MARGIN*comp.tick ||
+            ppos.y >= top + (FAR_MARGIN + Math.abs(pspeed.y))*comp.tick
+            ) {
+
+            return false;
+        }
+
+        this.kill();
+        player.bounce();
+
+        return true;
+    }
+
+
+    private checkTongueCollision(player : Player, comp : ProgramComponents) : boolean {
+
+        if (this.sticky || !player.isTongueActive() || player.getStickyObject() !== null) {
+
+            return false;
+        }
+
+        if (this.pos.distanceTo(player.getTonguePosition()) < ENEMY_RADIUS[this.type]) {
+
+            player.setStickyObject(this);
+            this.sticky = true;
+            this.frame = 0;
+
+            return true;
+        }
+        return false;
+    }
+
+
+    private followTongue(player : Player, comp : ProgramComponents) : void {
+
+        if (!player.isTongueActive()) {
+
+            if (this.type == EnemyType.Spikeball || this.type == EnemyType.ChainBall) {
+
+                player.hurt(comp);
+            }
+            this.kill();
+            return;
+        }
+
+        this.pos.makeEqual(player.getTonguePosition());
+    }
 
 
     private drawStaticBee(canvas : RenderTarget, bmp : Bitmap) : void {
 
-        canvas.drawBitmap(bmp, Flip.None, this.pos.x - 8, this.pos.y - 8,
+        canvas.drawBitmap(bmp, this.specialFlip, this.pos.x - 8, this.pos.y - 8,
             this.frame*16, 16, 16, 16);
     }
 
 
     private drawMovingBee(canvas : RenderTarget, bmp : Bitmap) : void {
 
-        canvas.drawBitmap(bmp, Flip.None, this.pos.x - 8, this.pos.y - 8,
+        canvas.drawBitmap(bmp, this.specialFlip, this.pos.x - 8, this.pos.y - 8,
             this.frame*16, 16, 16, 16, 16, 16, 8, 8, -Math.PI/2*this.direction);
     }
 
 
     private drawSlime(canvas : RenderTarget, bmp : Bitmap) : void {
 
-        canvas.drawBitmap(bmp, Flip.None, this.pos.x - 8, this.pos.y - 8,
+        canvas.drawBitmap(bmp, this.specialFlip, this.pos.x - 8, this.pos.y - 8,
             32 + this.frame*16, 16, 16, 16);
     }
 
 
     private drawCar(canvas : RenderTarget, bmp : Bitmap) : void {
 
-        canvas.drawBitmap(bmp, this.direction > 0 ? Flip.Horizontal : Flip.None, 
+        canvas.drawBitmap(bmp, (this.direction > 0 ? Flip.Horizontal : Flip.None) | this.specialFlip, 
             this.pos.x - 8, this.pos.y - 8,
             96 + this.frame*16, 16, 16, 16);
     }
@@ -179,7 +270,7 @@ export class Enemy extends GameObject {
 
     private drawCoin(canvas : RenderTarget, bmp : Bitmap) : void {
 
-        canvas.drawBitmap(bmp, Flip.None, 
+        canvas.drawBitmap(bmp, this.specialFlip, 
             this.pos.x - 8, this.pos.y - 8,
             this.frame*16, 32, 16, 16);
     }
@@ -189,7 +280,7 @@ export class Enemy extends GameObject {
 
         const CHAIN_COUNT : number = 6;
 
-        if (chained) {
+        if (chained && !this.sticky) {
 
             const distDelta : number = CHAINBALL_DISTANCE/CHAIN_COUNT;
             const c : number = this.direction*Math.cos(this.specialTimer);
@@ -206,7 +297,7 @@ export class Enemy extends GameObject {
             }
         }
 
-        canvas.drawBitmap(bmp, Flip.None, this.pos.x - 16, this.pos.y - 16, 128, 16, 32, 32);
+        canvas.drawBitmap(bmp, this.specialFlip, this.pos.x - 16, this.pos.y - 16, 128, 16, 32, 32);
     }
 
 
@@ -223,6 +314,11 @@ export class Enemy extends GameObject {
 
                 this.exists = false;
             }
+            return;
+        }
+
+        if (this.sticky) {
+
             return;
         }
 
@@ -286,6 +382,20 @@ export class Enemy extends GameObject {
             return;
         }
 
+        if (this.dying) {
+
+            // TODO: Create "drawDeath" function
+            canvas.drawBitmap(bmp, Flip.None, 
+                this.pos.x - 16, 
+                this.pos.y - 16, 
+                this.frame*32, 
+                48 + 32*Number(this.type != EnemyType.Coin), 
+                32, 32);
+            return;
+        }
+
+        this.specialFlip = this.sticky ? Flip.Vertical : Flip.None;
+
         switch (this.type) {
 
         case EnemyType.Coin:
@@ -346,6 +456,7 @@ export class Enemy extends GameObject {
 
         switch (this.type) {
 
+        case EnemyType.Coin:
         case EnemyType.Slime:
 
             this.frame = (Math.random()*4) | 0;
@@ -360,6 +471,7 @@ export class Enemy extends GameObject {
             break;
         }
 
+        this.sticky = false;
         this.exists = true;
         this.dying = false;
     }
@@ -372,20 +484,41 @@ export class Enemy extends GameObject {
             return false;
         }
 
+        if (this.sticky && player.getStickyObject() === this) {
+
+            this.followTongue(player, comp);
+            return false;
+        }
+
+        if (this.checkTongueCollision(player, comp)) {
+
+            return false;
+        }
+
+        if (this.checkStompCollision(player, comp)) {
+
+            return true;
+        }
+
         if (this.overlay(player)) {
 
             // Coin gets collected
             if (this.type == EnemyType.Coin) {
 
-                this.dying = true;
+                this.kill();
             }
-            // Otherwise, player gets hurt
             else {
 
-                // TODO: Hurt player
+                player.hurt(comp);
             }
             return true;
         }
         return false;
+    }
+
+
+    public isSticky() : boolean {
+
+        return this.sticky;
     }
 }

@@ -54,6 +54,12 @@ export class GameObject implements ExistingObject {
     }
 
 
+    public getSpeed() : Vector {
+
+        return this.speed.clone();
+    }
+
+
     public doesExist() : boolean {
 
         return this.exists;
