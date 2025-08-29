@@ -6,6 +6,9 @@ import { BitmapIndex, Controls } from "./mnemonics.js";
 import { Platform } from "./platform.js";
 
 
+const CHAINBALL_DISTANCE : number = 32;
+
+
 export const enum EnemyType {
 
     Coin = 0, // Yes, coin is an enemy
@@ -13,17 +16,21 @@ export const enum EnemyType {
     MovingBee = 2,
     Slime = 3,
     Car = 4,
+    Spikeball = 5,
+    ChainBall = 6,
 }
 
 
 export class Enemy extends GameObject {
 
 
+    private initialPos : Vector;
+
     private type : EnemyType = EnemyType.Coin;
 
     private frame : number = 0;
     private frameTimer : number = 0;
-    private waveTimer : number = 0.0;
+    private specialTimer : number = 0.0;
     private direction : number = 0;
 
     private dying : boolean = false;
@@ -34,6 +41,8 @@ export class Enemy extends GameObject {
     constructor() {
 
         super(0, 0, false);
+
+        this.initialPos = Vector.zero();
     }
 
 
@@ -64,14 +73,12 @@ export class Enemy extends GameObject {
     }
 
 
-    private updateStaticBee(amplitude : number, waveTime : number, tick : number) : void {
+    private updateFloatingBody(amplitude : number, waveTime : number, tick : number) : void {
 
         const waveSpeed : number = Math.PI*2/waveTime;
 
-        this.waveTimer = (this.waveTimer + waveSpeed*tick) % (Math.PI*2);
-        this.pos.y = this.referencePlatform!.getY() - 24 + Math.sin(this.waveTimer)*amplitude;
-
-        this.animate(4, 2, tick);
+        this.specialTimer = (this.specialTimer + waveSpeed*tick) % (Math.PI*2);
+        this.pos.y = this.referencePlatform!.getY() - 24 + Math.sin(this.specialTimer)*amplitude;
     }
 
 
@@ -79,7 +86,8 @@ export class Enemy extends GameObject {
 
         const FLY_SPEED : number = 1.0;
 
-        this.updateStaticBee(4, 90, tick);
+        this.updateFloatingBody(4, 90, tick);
+        this.animate(4, 2, tick);
 
         this.checkWallCollision(16, 14, -1); 
         this.checkWallCollision(240, 14, 1);
@@ -120,6 +128,17 @@ export class Enemy extends GameObject {
     }
 
 
+    private updateChainball(baseSpeed : number, tick : number) : void {
+
+        const ROTATION_SPEED : number = Math.PI*2/120.0;
+
+        this.specialTimer = (this.specialTimer + ROTATION_SPEED*tick) % (Math.PI*2);
+
+        this.pos.x = this.initialPos.x + Math.cos(this.specialTimer)*this.direction*CHAINBALL_DISTANCE;
+        this.pos.y = this.referencePlatform!.getY() + 8 + Math.sin(this.specialTimer)*CHAINBALL_DISTANCE;
+    }
+
+
     private drawStaticBee(canvas : RenderTarget, bmp : Bitmap) : void {
 
         canvas.drawBitmap(bmp, Flip.None, this.pos.x - 8, this.pos.y - 8,
@@ -149,6 +168,31 @@ export class Enemy extends GameObject {
     }
 
 
+    private drawSpikeBall(canvas : RenderTarget, bmp : Bitmap, chained : boolean = false) : void {
+
+        const CHAIN_COUNT : number = 6;
+
+        if (chained) {
+
+            const distDelta : number = CHAINBALL_DISTANCE/CHAIN_COUNT;
+            const c : number = this.direction*Math.cos(this.specialTimer);
+            const s : number = Math.sin(this.specialTimer);
+
+            for (let i : number = 0; i < CHAIN_COUNT; ++ i) {
+
+                const distance : number = distDelta*i;
+
+                const chainx : number = Math.round(this.initialPos.x + c*distance);
+                const chainy : number = Math.round(this.referencePlatform!.getY() + 8 + s*distance);
+
+                canvas.drawBitmap(bmp, Flip.None, chainx - 4, chainy - 4, 160, 16, 8, 8);
+            }
+        }
+
+        canvas.drawBitmap(bmp, Flip.None, this.pos.x - 16, this.pos.y - 16, 128, 16, 32, 32);
+    }
+
+
     public update(baseSpeed : number, comp : ProgramComponents) : void {
 
         if (!this.exists) {
@@ -160,7 +204,8 @@ export class Enemy extends GameObject {
 
         case EnemyType.StaticBee:
             
-            this.updateStaticBee(12, 120, comp.tick);
+            this.updateFloatingBody(12, 120, comp.tick);
+            this.animate(4, 2, comp.tick);
             break;
 
         case EnemyType.MovingBee:
@@ -176,6 +221,16 @@ export class Enemy extends GameObject {
         case EnemyType.Car:
 
             this.updateCar(baseSpeed, comp.tick);
+            break;
+
+        case EnemyType.Spikeball:
+
+            this.updateFloatingBody(4, 150, comp.tick);
+            break;
+
+        case EnemyType.ChainBall:
+
+            this.updateChainball(baseSpeed, comp.tick);
             break;
 
         default:
@@ -216,6 +271,12 @@ export class Enemy extends GameObject {
             this.drawCar(canvas, bmp);
             break;
 
+        case EnemyType.Spikeball:
+        case EnemyType.ChainBall:
+
+            this.drawSpikeBall(canvas, bmp, this.type == EnemyType.ChainBall);
+            break;
+
         default:
             break;
         }
@@ -225,12 +286,13 @@ export class Enemy extends GameObject {
     public spawn(x : number, y : number, type : EnemyType, referencePlatform : Platform) : void {
 
         this.pos.setValues(x, y);
+        this.initialPos.makeEqual(this.pos);
         this.type = type;
 
         this.speed.zero();
         this.speedTarget.zero();
 
-        this.waveTimer = Math.random()*Math.PI*2;
+        this.specialTimer = Math.random()*Math.PI*2;
         this.direction = Math.random() > 0.5 ? 1 : -1;
 
         this.referencePlatform = referencePlatform;
@@ -249,6 +311,11 @@ export class Enemy extends GameObject {
         case EnemyType.StaticBee:
 
             this.pos.y -= 16;
+            break;
+
+        case EnemyType.ChainBall:
+
+            this.specialTimer = Math.PI/4 + (Math.random()*Math.PI/2);
             break;
 
         default:

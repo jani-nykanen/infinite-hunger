@@ -344,13 +344,13 @@ export class Platform {
     }
 
 
-    public isGround(x : number) : boolean {
+    public isGround(x : number, ignoreBridge : boolean = false) : boolean {
 
         if (x < 0 || x >= this.tiles.length) {
 
             return false;
         }
-        return this.tiles[x] != Tile.Gap;
+        return !ignoreBridge ? this.tiles[x] != Tile.Gap : this.tiles[x] == Tile.Ground;
     }
 
 

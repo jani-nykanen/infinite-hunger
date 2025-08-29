@@ -9,7 +9,9 @@ import { nextExistingObject } from "./existingobject.js";
 import { sampleWeighted } from "./random.js";
 
 
-const ENEMY_WEIGHTS : number[] = [0.25, 0.25, 0.25, 0.25];
+const ENEMY_WEIGHTS : number[] = [0.166, 0.166, 0.166, 0.166, 0.166, 0.170];
+
+const GROUND_ENEMIES : boolean[] = [false, false, false, true, true, false, true];
 
 
 export class Stage {
@@ -37,14 +39,14 @@ export class Stage {
     }
 
 
-    private findFreeTile(platform : Platform) : number {
+    private findFreeTile(platform : Platform, ignoreBridge : boolean = false) : number {
 
         const startPos : number = (Math.random()*14) | 0;
 
         let x : number = startPos;
         do {
 
-            if (platform.isGround(x)) {
+            if (platform.isGround(x, ignoreBridge)) {
 
                 return x + 1;
             }
@@ -61,9 +63,9 @@ export class Stage {
         let x : number = 1 + ((Math.random()*14) | 0);
 
         const type : EnemyType = (1 + sampleWeighted(ENEMY_WEIGHTS)) as EnemyType;
-        if (type == EnemyType.Slime || type == EnemyType.Car) {
+        if (GROUND_ENEMIES[type]) {
 
-            x = this.findFreeTile(platform);
+            x = this.findFreeTile(platform, type == EnemyType.ChainBall);
             if (x == 0) {
 
                 return;

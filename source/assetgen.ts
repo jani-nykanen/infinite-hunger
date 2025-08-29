@@ -97,8 +97,8 @@ const GAME_ART_PALETTE_TABLE : (string | undefined) [] = [
     "100J", "100J", "100J", "100J", "100J", "100J", "100J", "100J",
     "10KL", "10KL", "10OP", "10MN", "10MN", "10MQ", "10MN", "10MQ",
     "10Q2", "10KL", "10OP", "10MN", "10MN", "10MQ", "10MN", "10MQ",
-    "1004", "10JS", "10JR", "0000", "0000", "0000", "0000", "0000",
-    "1004", "10JR", "10JR", "0000", "0000", "0000", "0000", "0000",
+    "1004", "10JS", "10JR", "1042", "1042", "10LD", "10LK", "1042",
+    "1004", "10JR", "10JR", "1042", "1042", "10LK", "10LK", "0000",
 ];
 
 
@@ -218,7 +218,18 @@ const generateGameObjectsBitmap = (assets : Assets, bmpBase : Bitmap) : void => 
         canvas.drawBitmap(bmpBase, Flip.None, 64 + i*16, 8, 32, 48 + i*8, 16, 8);
     }
     
+    //
     // Enemies
+    //
+
+    // Spikeball body
+    canvas.drawBitmap(bmpBase, Flip.None, 128 + 8, 24, 40, 80, 16, 16);
+    // Spikeball face
+    canvas.drawBitmap(bmpBase, Flip.None, 128 + 12, 28, 0, 72, 8, 8);
+    // Spikeball chain
+    canvas.drawBitmap(bmpBase, Flip.None, 160, 16, 56, 80, 8, 8);
+
+
     for (let i : number = 0; i < 4; ++ i) {
         
         if (i < 2) {
@@ -256,6 +267,9 @@ const generateGameObjectsBitmap = (assets : Assets, bmpBase : Bitmap) : void => 
                 canvas.drawBitmap(bmpBase, Flip.None, 96 + 4 + i*16 + j*7, 32 - 5, 0, 80 + i*5, 5, 5);
             }
         }
+
+        // Spikeball spikes
+        canvas.drawBitmap(bmpBase, Flip.None, 128 + 11, 16 + 11, 24, 80, 16, 16, 16, 16, 5, 5, -Math.PI/2*i);
     }
 
     assets.addBitmap(BitmapIndex.GameObjects, canvas.toBitmap());
