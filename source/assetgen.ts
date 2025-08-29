@@ -99,6 +99,8 @@ const GAME_ART_PALETTE_TABLE : (string | undefined) [] = [
     "10Q2", "10KL", "10OP", "10MN", "10MN", "10MQ", "10MN", "10MQ",
     "1004", "10JS", "10JR", "1042", "1042", "10LD", "10LK", "1042",
     "1004", "10JR", "10JR", "1042", "1042", "10LK", "10LK", "0000",
+    "10GD", "10GF", "10GF", "10GF", "0000", "0000", "0000", "0000",
+    "10GF", "10GF", "10GF", "10GF", "0000", "0000", "0000", "0000",
 ];
 
 
@@ -254,6 +256,10 @@ const generateGameObjectsBitmap = (assets : Assets, bmpBase : Bitmap) : void => 
             canvas.drawBitmap(bmpBase, Flip.None, 96 + i*16, 16 - i, 8, 80, 16, 16);
             // Car face
             canvas.drawBitmap(bmpBase, Flip.None, 96 + 2 + i*16, 16 + 5 - i, 2, 72, 6, 8);
+
+            // Coin
+            canvas.drawBitmap(bmpBase, Flip.None, i*36, 32, i*24, 96, 16 - i*8, 16);
+            canvas.drawBitmap(bmpBase, i as Flip, 20 + i*32, 32, 16, 96, 8, 16);
         }
 
         for (let j : number = 0; j < 2; ++ j) {

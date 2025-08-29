@@ -4,6 +4,8 @@ import { Bitmap, Flip, RenderTarget } from "./gfx.js";
 import { ProgramComponents } from "./program.js";
 import { BitmapIndex, Controls } from "./mnemonics.js";
 import { Platform } from "./platform.js";
+import { Player } from "./player.js";
+import { Rectangle } from "./rectangle.js";
 
 
 const CHAINBALL_DISTANCE : number = 32;
@@ -33,8 +35,6 @@ export class Enemy extends GameObject {
     private specialTimer : number = 0.0;
     private direction : number = 0;
 
-    private dying : boolean = false;
-
     private referencePlatform : Platform | undefined = undefined;
 
 
@@ -43,6 +43,15 @@ export class Enemy extends GameObject {
         super(0, 0, false);
 
         this.initialPos = Vector.zero();
+    }
+
+
+    private die(baseSpeed : number, tick : number) : boolean {
+
+        this.pos.y += baseSpeed;
+
+        // TEMP
+        return true;
     }
 
 
@@ -168,6 +177,14 @@ export class Enemy extends GameObject {
     }
 
 
+    private drawCoin(canvas : RenderTarget, bmp : Bitmap) : void {
+
+        canvas.drawBitmap(bmp, Flip.None, 
+            this.pos.x - 8, this.pos.y - 8,
+            this.frame*16, 32, 16, 16);
+    }
+
+
     private drawSpikeBall(canvas : RenderTarget, bmp : Bitmap, chained : boolean = false) : void {
 
         const CHAIN_COUNT : number = 6;
@@ -200,7 +217,22 @@ export class Enemy extends GameObject {
             return;
         }
 
+        if (this.dying) {
+
+            if (this.die(baseSpeed, comp.tick)) {
+
+                this.exists = false;
+            }
+            return;
+        }
+
         switch (this.type) {
+
+        case EnemyType.Coin:
+
+            this.updateFloatingBody(2, 90, comp.tick);
+            this.animate(7, 4, comp.tick);
+            break;
 
         case EnemyType.StaticBee:
             
@@ -238,7 +270,7 @@ export class Enemy extends GameObject {
         }
 
         this.pos.y += baseSpeed*comp.tick;
-        if (this.pos.y >= 192 + 16) {
+        if (this.pos.y >= 192 + 48) {
 
             this.exists = false;
         }
@@ -249,7 +281,17 @@ export class Enemy extends GameObject {
 
     public draw(canvas : RenderTarget, bmp : Bitmap) : void {
 
+        if (!this.exists) {
+
+            return;
+        }
+
         switch (this.type) {
+
+        case EnemyType.Coin:
+
+            this.drawCoin(canvas, bmp);
+            break;
 
         case EnemyType.StaticBee:
             
@@ -300,17 +342,13 @@ export class Enemy extends GameObject {
         this.frame = 0;
         this.frameTimer = 0.0;
 
+        this.hitbox = new Rectangle(0, 0, 14, 14);
+
         switch (this.type) {
 
         case EnemyType.Slime:
 
             this.frame = (Math.random()*4) | 0;
-            break;
-
-        case EnemyType.MovingBee:
-        case EnemyType.StaticBee:
-
-            this.pos.y -= 16;
             break;
 
         case EnemyType.ChainBall:
@@ -323,5 +361,31 @@ export class Enemy extends GameObject {
         }
 
         this.exists = true;
+        this.dying = false;
+    }
+
+
+    public playerCollision(player : Player, comp : ProgramComponents) : boolean {
+
+        if (!this.exists || !player.doesExist() || this.dying || player.isDying()) {
+
+            return false;
+        }
+
+        if (this.overlay(player)) {
+
+            // Coin gets collected
+            if (this.type == EnemyType.Coin) {
+
+                this.dying = true;
+            }
+            // Otherwise, player gets hurt
+            else {
+
+                // TODO: Hurt player
+            }
+            return true;
+        }
+        return false;
     }
 }

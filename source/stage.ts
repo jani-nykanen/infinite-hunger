@@ -10,6 +10,8 @@ import { sampleWeighted } from "./random.js";
 
 
 const ENEMY_WEIGHTS : number[] = [0.166, 0.166, 0.166, 0.166, 0.166, 0.170];
+const ENEMY_COUNT_WEIGHTS : number[] = [0.20, 0.60, 0.20];
+const COIN_COUNT_WEIGHTS : number[] = [0.50, 0.40, 0.10];
 
 const GROUND_ENEMIES : boolean[] = [false, false, false, true, true, false, true];
 
@@ -23,30 +25,35 @@ export class Stage {
     private platforms : Platform[];
     private player : Player;
     private enemies : Enemy[];
+    // Coins live in a different array to make sure
+    // that they are always draw after enemies (and take
+    // tongue collision also after enemies!)
+    private coins : Enemy[];
 
     
     constructor() {
 
-        this.platforms = new Array<Platform> (5);
+        this.platforms = new Array<Platform> (6);
         for (let y : number = 0; y < this.platforms.length; ++ y) {
 
             const dy : number = -64 + y*64;
-            this.platforms[y] = new Platform(dy, 256, -64);
+            this.platforms[y] = new Platform(dy, 320, -64);
         }
 
         this.player = new Player(128, 32);
         this.enemies = new Array<Enemy> ();
+        this.coins = new Array<Enemy> ();
     }
 
 
-    private findFreeTile(platform : Platform, ignoreBridge : boolean = false) : number {
+    private findFreeTile(platform : Platform, reserved : boolean[], ignoreBridge : boolean = false) : number {
 
         const startPos : number = (Math.random()*14) | 0;
 
         let x : number = startPos;
         do {
 
-            if (platform.isGround(x, ignoreBridge)) {
+            if (!reserved[x] && platform.isGround(x, ignoreBridge)) {
 
                 return x + 1;
             }
@@ -58,23 +65,48 @@ export class Stage {
     }
 
 
-    private generateEnemies(platform : Platform) : void {
+    private generateEnemiesAndCoins(platform : Platform) : void {
 
-        let x : number = 1 + ((Math.random()*14) | 0);
+        const reservedTiles : boolean[] = (new Array<boolean> (14)).fill(false);
 
-        const type : EnemyType = (1 + sampleWeighted(ENEMY_WEIGHTS)) as EnemyType;
-        if (GROUND_ENEMIES[type]) {
+        // Step 1: enemies
+        const enemyCount : number = sampleWeighted(ENEMY_COUNT_WEIGHTS);
+        for (let i : number = 0; i < enemyCount; ++ i) {
 
-            x = this.findFreeTile(platform, type == EnemyType.ChainBall);
+            let x : number = 1 + ((Math.random()*14) | 0);
+            const type : EnemyType = (1 + sampleWeighted(ENEMY_WEIGHTS)) as EnemyType;
+            if (GROUND_ENEMIES[type]) {
+
+                x = this.findFreeTile(platform, reservedTiles, type == EnemyType.ChainBall);
+                if (x == 0) {
+
+                    continue;
+                }
+            }
+
+            const dx : number = x*16 + 8;
+            const dy : number = platform.getY() - 8;
+
+            nextExistingObject<Enemy>(this.enemies, Enemy).spawn(dx, dy, type, platform);
+            reservedTiles[x - 1] = true;
+        }
+
+        // Step 2: coins
+        const coinCount : number = sampleWeighted(COIN_COUNT_WEIGHTS);
+        for (let i : number = 0; i < coinCount; ++ i) {
+
+            const x : number = this.findFreeTile(platform, reservedTiles);
             if (x == 0) {
 
-                return;
+                break;
             }
-        }
-        const dx : number = x*16 + 8;
-        const dy : number = platform.getY() - 8;
 
-        nextExistingObject<Enemy>(this.enemies, Enemy).spawn(dx, dy, type, platform);
+            const dx : number = x*16 + 8;
+            const dy : number = platform.getY() - 8;
+
+            nextExistingObject<Enemy>(this.coins, Enemy).spawn(dx, dy, EnemyType.Coin, platform);
+            reservedTiles[x - 1] = true;
+        }
     }
 
 
@@ -120,11 +152,17 @@ export class Stage {
             e.update(this.baseSpeed, comp);
         }
 
+        for (const c of this.coins) {
+
+            c.update(this.baseSpeed, comp);
+            c.playerCollision(this.player, comp);
+        }
+
         for (const p of this.platforms) {
 
             if (p.update(this.baseSpeed, comp.tick)) {
 
-                this.generateEnemies(p);
+                this.generateEnemiesAndCoins(p);
             }
             p.playerCollision(this.player, this.baseSpeed, comp.tick);
         }
@@ -148,6 +186,11 @@ export class Stage {
         for (const e of this.enemies) {
 
             e.draw(canvas, bmpObjects);
+        }
+
+        for (const c of this.coins) {
+
+            c.draw(canvas, bmpObjects);
         }
 
         this.player.preDraw(canvas);

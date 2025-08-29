@@ -1,6 +1,7 @@
 import { Vector } from "./vector.js";
 import { approachValue } from "./utility.js";
 import { ExistingObject } from "./existingobject.js";
+import { Rectangle } from "./rectangle.js";
 
 
 export class GameObject implements ExistingObject {
@@ -11,6 +12,9 @@ export class GameObject implements ExistingObject {
     protected friction : Vector;
 
     protected exists : boolean;
+    protected dying : boolean = false;
+
+    protected hitbox : Rectangle;
 
 
     constructor(x : number, y : number, exists : boolean = true) {
@@ -35,6 +39,15 @@ export class GameObject implements ExistingObject {
     }
 
 
+    protected overlay(o : GameObject) : boolean {
+
+        return this.pos.x + this.hitbox.x + this.hitbox.w/2 >= o.pos.x + o.hitbox.x - o.hitbox.w/2 &&
+               this.pos.x + this.hitbox.x - this.hitbox.w/2 <= o.pos.x + o.hitbox.x + o.hitbox.w/2 &&
+               this.pos.y + this.hitbox.y + this.hitbox.h/2 >= o.pos.y + o.hitbox.y - o.hitbox.h/2 &&
+               this.pos.y + this.hitbox.y - this.hitbox.h/2 <= o.pos.y + o.hitbox.y + o.hitbox.h/2;
+    }
+
+
     public getPosition() : Vector {
 
         return this.pos.clone();
@@ -44,5 +57,11 @@ export class GameObject implements ExistingObject {
     public doesExist() : boolean {
 
         return this.exists;
+    }
+
+
+    public isDying() : boolean {
+
+        return this.dying;
     }
 }

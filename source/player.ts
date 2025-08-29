@@ -8,6 +8,7 @@ import { ActionState, Controller, InputState } from "./controller.js";
 import { Dust } from "./dust.js";
 import { GameObject } from "./gameobject.js";
 import { nextExistingObject } from "./existingobject.js";
+import { Rectangle } from "./rectangle.js";
 
 
 const TONGUE_MAX_TIME : number = 16;
@@ -39,6 +40,8 @@ export class Player extends GameObject {
         super(x, y, true);
 
         this.dust = new Array<Dust> ();
+
+        this.hitbox = new Rectangle(0, 2, 8, 12);
     }
 
 
