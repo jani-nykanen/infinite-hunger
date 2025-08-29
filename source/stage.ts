@@ -9,7 +9,7 @@ import { nextExistingObject } from "./existingobject.js";
 import { sampleWeighted } from "./random.js";
 
 
-const ENEMY_WEIGHTS : number[] = [0.33, 0.33, 0.34];
+const ENEMY_WEIGHTS : number[] = [0.25, 0.25, 0.25, 0.25];
 
 
 export class Stage {
@@ -61,7 +61,7 @@ export class Stage {
         let x : number = 1 + ((Math.random()*14) | 0);
 
         const type : EnemyType = (1 + sampleWeighted(ENEMY_WEIGHTS)) as EnemyType;
-        if (type == EnemyType.Slime) {
+        if (type == EnemyType.Slime || type == EnemyType.Car) {
 
             x = this.findFreeTile(platform);
             if (x == 0) {

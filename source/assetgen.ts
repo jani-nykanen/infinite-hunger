@@ -79,6 +79,9 @@ const PALETTE_TABLE : number[] = [
 
     0b001011100, // Q Darker blue
 
+    0b100010101, // R Dark purple
+    0b111110111, // S Bright pink
+
 ];
 
 
@@ -94,6 +97,8 @@ const GAME_ART_PALETTE_TABLE : (string | undefined) [] = [
     "100J", "100J", "100J", "100J", "100J", "100J", "100J", "100J",
     "10KL", "10KL", "10OP", "10MN", "10MN", "10MQ", "10MN", "10MQ",
     "10Q2", "10KL", "10OP", "10MN", "10MN", "10MQ", "10MN", "10MQ",
+    "1004", "10JS", "10JR", "0000", "0000", "0000", "0000", "0000",
+    "1004", "10JR", "10JR", "0000", "0000", "0000", "0000", "0000",
 ];
 
 
@@ -231,12 +236,25 @@ const generateGameObjectsBitmap = (assets : Assets, bmpBase : Bitmap) : void => 
             canvas.drawBitmap(bmpBase, Flip.None, 48 + i*32, 16 + (i == 0 ? 2 : -1), 32, 64, 16, i == 0 ? 7 : 9);
             // Slime lower body
             canvas.drawBitmap(bmpBase, Flip.None, 48 + i*32, 24, 48, 64 + i*8, 16, 8);
+
+            // Background tire
+            canvas.drawBitmap(bmpBase, Flip.None, 96 + i*16, 32 - 5, 0, 90, 5, 5);
+            // "Car" body
+            canvas.drawBitmap(bmpBase, Flip.None, 96 + i*16, 16 - i, 8, 80, 16, 16);
+            // Car face
+            canvas.drawBitmap(bmpBase, Flip.None, 96 + 2 + i*16, 16 + 5 - i, 2, 72, 6, 8);
         }
 
-        // Slime eyes & nose
         for (let j : number = 0; j < 2; ++ j) {
 
+            // Slime eyes & nose
             canvas.drawBitmap(bmpBase, Flip.None, 32 + 4 + i*16, 16 + 6 + FACE_OFFSET[i], j*8, 72, 8, 8);
+
+            if (i < 2) {
+
+                // "Car" tires
+                canvas.drawBitmap(bmpBase, Flip.None, 96 + 4 + i*16 + j*7, 32 - 5, 0, 80 + i*5, 5, 5);
+            }
         }
     }
 

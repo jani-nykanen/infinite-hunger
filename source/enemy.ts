@@ -12,6 +12,7 @@ export const enum EnemyType {
     StaticBee = 1,
     MovingBee = 2,
     Slime = 3,
+    Car = 4,
 }
 
 
@@ -36,22 +37,41 @@ export class Enemy extends GameObject {
     }
 
 
+    private animate(frameTime : number, frameCount : number, tick : number) : void {
 
-    private updateStaticBee(tick : number) : void {
+        this.frameTimer += tick;
+        if (this.frameTimer >= frameTime) {
 
-        const ANIMATION_SPEED : number = 1.0/4.0;
-        const WAVE_AMPLITUDE : number = 8;
-        const WAVE_SPEED : number = Math.PI*2/120;
-
-        this.waveTimer = (this.waveTimer + WAVE_SPEED*tick) % (Math.PI*2);
-        this.pos.y = this.referencePlatform!.getY() - 24 + Math.sin(this.waveTimer)*WAVE_AMPLITUDE;
-
-        this.frameTimer += ANIMATION_SPEED*tick;
-        if (this.frameTimer >= 1.0) {
-
-            this.frame = (this.frame + 1) % 2;
-            this.frameTimer -= 1.0;
+            this.frame = (this.frame + 1) % frameCount;
+            this.frameTimer -= frameTime;
         }
+    }
+
+
+    private checkWallCollision(x : number, collisionWidth : number, dir : number) : boolean {
+
+        if (this.direction == dir &&
+            (dir > 0 && this.pos.x + collisionWidth/2 > x) ||
+            (dir < 0 && this.pos.x - collisionWidth/2 < x)) {
+
+            this.pos.x = x - collisionWidth/2*dir;
+            this.direction = -dir;
+            this.speed.x = 0.0;
+
+            return true;
+        }
+        return false;
+    }
+
+
+    private updateStaticBee(amplitude : number, waveTime : number, tick : number) : void {
+
+        const waveSpeed : number = Math.PI*2/waveTime;
+
+        this.waveTimer = (this.waveTimer + waveSpeed*tick) % (Math.PI*2);
+        this.pos.y = this.referencePlatform!.getY() - 24 + Math.sin(this.waveTimer)*amplitude;
+
+        this.animate(4, 2, tick);
     }
 
 
@@ -59,32 +79,44 @@ export class Enemy extends GameObject {
 
         const FLY_SPEED : number = 1.0;
 
-        this.updateStaticBee(tick);
+        this.updateStaticBee(4, 90, tick);
+
+        this.checkWallCollision(16, 14, -1); 
+        this.checkWallCollision(240, 14, 1);
 
         this.speed.x = this.direction*baseSpeed*FLY_SPEED;
-        if ((this.pos.x < 24 && this.direction < 0) ||
-            (this.pos.x > 232 && this.direction > 0)) {
-
-            this.pos.x = this.direction > 0 ? 232 : 24;
-            this.speed.x = -1;
-            this.direction *= -1;
-        }
         this.speedTarget.makeEqual(this.speed);
     }
 
 
     private updateSlime(tick : number) : void {
 
-        const FRAME_TIME : number = 8;
+        this.pos.y = this.referencePlatform.getY() - 7;
 
-        this.frameTimer += tick;
-        if (this.frameTimer >= FRAME_TIME) {
+        this.animate(8, 4, tick);
+    }
 
-            this.frame = (this.frame + 1) % 4;
-            this.frameTimer -= FRAME_TIME;
+
+    private updateCar(baseSpeed : number, tick : number) : void {
+
+        const MOVE_SPEED : number = 0.5;
+
+        this.speed.x = this.direction*baseSpeed*MOVE_SPEED;
+        this.speedTarget.makeEqual(this.speed);
+
+        const px : number = (this.pos.x/16) | 0;
+        if (!this.referencePlatform!.isGround(px - 2)) {
+
+            this.checkWallCollision(px*16, 8, -1);
+        }
+        if (!this.referencePlatform!.isGround(px)) {
+
+            this.checkWallCollision((px + 1)*16, 8, 1);
         }
 
         this.pos.y = this.referencePlatform.getY() - 7;
+
+        this.animate(8, 2, tick);
     }
 
 
@@ -109,6 +141,14 @@ export class Enemy extends GameObject {
     }
 
 
+    private drawCar(canvas : RenderTarget, bmp : Bitmap) : void {
+
+        canvas.drawBitmap(bmp, this.direction > 0 ? Flip.Horizontal : Flip.None, 
+            this.pos.x - 8, this.pos.y - 8,
+            96 + this.frame*16, 16, 16, 16);
+    }
+
+
     public update(baseSpeed : number, comp : ProgramComponents) : void {
 
         if (!this.exists) {
@@ -120,7 +160,7 @@ export class Enemy extends GameObject {
 
         case EnemyType.StaticBee:
             
-            this.updateStaticBee(comp.tick);
+            this.updateStaticBee(12, 120, comp.tick);
             break;
 
         case EnemyType.MovingBee:
@@ -131,6 +171,11 @@ export class Enemy extends GameObject {
         case EnemyType.Slime:
 
             this.updateSlime(comp.tick);
+            break;
+
+        case EnemyType.Car:
+
+            this.updateCar(baseSpeed, comp.tick);
             break;
 
         default:
@@ -164,6 +209,11 @@ export class Enemy extends GameObject {
         case EnemyType.Slime:
 
             this.drawSlime(canvas, bmp);
+            break;
+
+        case EnemyType.Car:
+
+            this.drawCar(canvas, bmp);
             break;
 
         default:
