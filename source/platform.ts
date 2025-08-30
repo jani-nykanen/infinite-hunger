@@ -1,6 +1,6 @@
 import { Bitmap, Flip, RenderTarget } from "./gfx.js";
 import { Player } from "./player.js";
-import { sampleWeighted } from "./random.js";
+import { sampleWeighted, sampleWeightedInterpolated } from "./random.js";
 
 
 const enum Tile {
@@ -28,6 +28,9 @@ const enum Decoration {
 const VINE_LENGTH_WEIGHTS : number[] = [0.0, 0.4, 0.5, 0.1];
 const DECORATION_WEIGHTS : number[] = [0.0, 0.20, 0.20, 0.10, 0.25, 0.25];
 
+const SPIKE_WEIGHTS_INITIAL : number[] = [0.50, 0.40, 0.10, 0.0];
+const SPIKE_WEIGHTS_FINAL : number[] = [0.10, 0.50, 0.30, 0.10];
+
 
 export class Platform {
 
@@ -38,9 +41,11 @@ export class Platform {
     private tiles : Tile[];
     private vines : number[];
     private decorations : Decoration[];
+    private spikes : boolean[];
 
 
-    constructor(y : number, screenHeight : number, initialShift : number) {
+    constructor(y : number, screenHeight : number, initialShift : number, 
+        initialPlatform : boolean = false, forceEmpty : boolean = false) {
 
         this.y = y;
         this.screenHeight = screenHeight;
@@ -49,25 +54,77 @@ export class Platform {
         this.tiles = (new Array<Tile> (14)).fill(Tile.Gap);
         this.vines = (new Array<number> (14)).fill(0);
         this.decorations = (new Array<Decoration> (14)).fill(Decoration.None);
+        this.spikes = (new Array<boolean> (14)).fill(false);
 
-        this.generateTiles();
+        if (forceEmpty) {
+
+            return;
+        }
+
+        this.generateTiles(0.0, initialPlatform);
     }
 
 
-    private clearUnwantedDecorations() : void {
+    private clearUnwantedDecorationsAndSpikes() : void {
 
         for (let i : number = 0; i < this.tiles.length; ++ i) {
 
-            if ((i > 0 && this.decorations[i] != Decoration.None && this.tiles[i + 1] == Tile.Bridge) ||
-                (i < this.tiles.length - 1 && this.decorations[i] != Decoration.None && this.tiles[i - 1] == Tile.Bridge)) {
+            if (this.decorations[i] == Decoration.None && !this.spikes[i]) {
+
+                continue;
+            }
+
+            if ((i > 0 && this.tiles[i + 1] == Tile.Bridge) ||
+                (i < this.tiles.length - 1 && this.tiles[i - 1] == Tile.Bridge)) {
 
                 this.decorations[i] = Decoration.None;
+                this.spikes[i] = false;
             }    
         }
     }
 
 
-    private generateTiles() : void {
+    private generateSpikes(t : number) : void {
+
+        let maxSpikeCount : number = 0;
+        for (let i : number = 0; i < this.tiles.length; ++ i) {
+
+            if (this.tiles[i] == Tile.Ground) {
+
+                ++ maxSpikeCount;
+            }
+        }
+
+        const spikeCount : number = Math.min(maxSpikeCount, 
+            sampleWeightedInterpolated(SPIKE_WEIGHTS_INITIAL, SPIKE_WEIGHTS_FINAL, t));
+        if (spikeCount == 0) {
+
+            return;
+        }
+
+        for (let j : number = 0; j < spikeCount; ++ j) {
+
+            const startx : number = (Math.random()*14) | 0;
+            let x : number = startx;
+
+            do {
+
+                if (this.tiles[x] == Tile.Ground || !this.spikes[x]) {
+
+                    this.decorations[x] = Decoration.None;
+                    this.spikes[x] = true;
+                    this.vines[x] = 0;
+                    break;
+                }
+
+                ++ x;
+            }
+            while(x != startx);
+        }
+    }
+
+
+    private generateTiles(t : number, initial : boolean) : void {
 
         const BRIDGE_INITIAL_PROB : number = 0.20;
         const BRIDGE_PROP_INCREMENT : number = 0.10;
@@ -80,11 +137,12 @@ export class Platform {
 
         const MAX_LENGTHS : number[] = [4, 6];
 
-        const startWithGround : boolean = Math.random() > 0.5;
+        const startWithGround : boolean = initial || Math.random() > 0.5;
 
         this.tiles.fill(0);
         this.vines.fill(0);
         this.decorations.fill(Decoration.None);
+        this.spikes.fill(false);
 
         let ground : boolean = startWithGround;
         let counter : number = 0;
@@ -108,10 +166,17 @@ export class Platform {
 
             ++ counter;
 
-            this.tiles[i] = ground ? Tile.Ground : (isBridge ? Tile.Bridge : Tile.Gap);
+            if (initial) {
+
+                this.tiles[i] = Tile.Ground;
+            }
+            else {
+
+                this.tiles[i] = ground ? Tile.Ground : (isBridge ? Tile.Bridge : Tile.Gap);
+            }
 
             // Add vines 
-            if (ground && !first && !last) {
+            if (initial || (ground && !first && !last)) {
 
                 if (Math.random() <= vineProb) {
 
@@ -167,6 +232,12 @@ export class Platform {
                 }
             }
 
+            if (initial) {
+
+                continue;
+            }
+
+
             // End gap/ground
             if (counter >= length) {
 
@@ -195,8 +266,14 @@ export class Platform {
             last = counter == length - 1;
         }
 
-        // Clear decorations possibly overlapping with bridge fence
-        this.clearUnwantedDecorations();
+        if (initial) {
+
+            return;
+        }
+
+        // Clear decorations (and spikes) possibly overlapping with bridge fence
+        this.generateSpikes(t);
+        this.clearUnwantedDecorationsAndSpikes();
     }
 
 
@@ -232,7 +309,7 @@ export class Platform {
     }
 
 
-    private drawGround(canvas : RenderTarget, bmp : Bitmap, x : number) : void {
+    private drawGround(canvas : RenderTarget, bmp : Bitmap, x : number, spikeAnimationTimer : number) : void {
 
         const left : boolean = x == 0 || this.tiles[x - 1] == Tile.Ground;
         const right : boolean = x == this.tiles.length - 1 || this.tiles[x + 1] == Tile.Ground;
@@ -264,6 +341,12 @@ export class Platform {
             // Bottom
             canvas.drawBitmap(bmp, Flip.None, dx, this.y + this.vines[x]*16, 64, 16, 16, 8);
         }
+
+        if (this.spikes[x]) {
+
+            const frame : number = (spikeAnimationTimer*2) | 0;
+            canvas.drawBitmap(bmp, Flip.None, dx, this.y - 16, 240, frame*16, 16, 16);
+        }
     }
 
 
@@ -291,14 +374,14 @@ export class Platform {
     }
 
 
-    public update(baseSpeed : number, tick : number) : boolean {
+    public update(baseSpeed : number, t : number, tick : number) : boolean {
 
         this.y += baseSpeed*tick;
 
         if (this.y >= this.screenHeight) {
 
             this.y -= (this.screenHeight - this.initialShift);
-            this.generateTiles();
+            this.generateTiles(t, false);
 
             return true;
         }
@@ -306,7 +389,7 @@ export class Platform {
     }
 
 
-    public draw(canvas : RenderTarget, bmp : Bitmap) : void {
+    public draw(canvas : RenderTarget, bmp : Bitmap, spikeAnimationTimer : number) : void {
 
         canvas.move(16, 0);
         for (let x : number = 0; x < this.tiles.length; ++ x) {
@@ -315,7 +398,7 @@ export class Platform {
 
             case Tile.Ground:
 
-                this.drawGround(canvas, bmp, x);
+                this.drawGround(canvas, bmp, x, spikeAnimationTimer);
                 break;
 
             case Tile.Bridge:
@@ -346,7 +429,7 @@ export class Platform {
 
     public isGround(x : number, ignoreBridge : boolean = false) : boolean {
 
-        if (x < 0 || x >= this.tiles.length) {
+        if (x < 0 || x >= this.tiles.length || this.spikes[x]) {
 
             return false;
         }

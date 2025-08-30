@@ -1,3 +1,4 @@
+import { Vector } from "./vector.js";
 
 
 export class Rectangle {
@@ -21,5 +22,14 @@ export class Rectangle {
     public clone() : Rectangle {
 
         return new Rectangle(this.x, this.y, this.w, this.h);
+    }
+
+
+    static overlayShifted(v1 : Vector, r1 : Rectangle, v2 : Vector, r2 : Rectangle) : boolean {
+
+        return v1.x + r1.x + r1.w/2 >= v2.x + r2.x - r2.w/2 &&
+               v1.x + r1.x - r1.w/2 <= v2.x + r2.x + r2.w/2 &&
+               v1.y + r1.y + r1.h/2 >= v2.y + r2.y - r2.h/2 &&
+               v1.y + r1.y - r1.h/2 <= v2.y + r2.y + r2.h/2;
     }
 }

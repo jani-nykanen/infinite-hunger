@@ -6,21 +6,35 @@ import { Platform } from "./platform.js";
 import { Player } from "./player.js";
 import { Enemy, EnemyType } from "./enemy.js";
 import { nextExistingObject } from "./existingobject.js";
-import { sampleWeighted } from "./random.js";
+import { sampleWeighted, sampleWeightedInterpolated } from "./random.js";
+import { approachValue } from "./utility.js";
+import { clamp } from "./math.js";
 
 
-const ENEMY_WEIGHTS : number[] = [0.166, 0.166, 0.166, 0.166, 0.166, 0.170];
-const ENEMY_COUNT_WEIGHTS : number[] = [0.20, 0.60, 0.20];
-const COIN_COUNT_WEIGHTS : number[] = [0.50, 0.40, 0.10];
+const ENEMY_WEIGHTS_INITIAL : number[] = [0.30, 0.25, 0.30, 0.15, 0.0, 0.0];
+const ENEMY_WEIGHTS_FINAL : number[] = [0.167, 0.167, 0.167, 0.167, 0.166, 0.66];
+
+const ENEMY_COUNT_WEIGHTS_INITIAL : number[] = [0.20, 0.70, 0.10, 0.0];
+const ENEMY_COUNT_WEIGHTS_FINAL : number[] = [0.10, 0.40, 0.30, 0.20];
+
+const COIN_COUNT_WEIGHTS_INITIAL : number[] = [0.50, 0.40, 0.10];
+const COIN_COUNT_WEIGHTS_FINAL : number[] = [0.30, 0.50, 0.20];
 
 const GROUND_ENEMIES : boolean[] = [false, false, false, true, true, false, true];
+
+const SPEED_UP_TIMER : number[] = [15*60, 60*60, 120*60, 210*60, 360*60];
+const BASE_SPEEDS : number[] = [0.5, 0.75, 1.0, 1.25, 1.5];
 
 
 export class Stage {
 
+    private baseSpeed : number = 0.0;
+    private baseSpeedTarget : number = 0.0;
+    private speedUpTimer : number = 0.0;
+    private speedUpIndex : number = 0;
 
     private wallPosition : number = 0.0;
-    private baseSpeed : number = 1.0;
+    private spikeAnimationTimer : number = 0.0;
 
     private platforms : Platform[];
     private player : Player;
@@ -33,14 +47,16 @@ export class Stage {
     
     constructor() {
 
+        const INITIAL_PLATFORM : number = 2;
+
         this.platforms = new Array<Platform> (6);
         for (let y : number = 0; y < this.platforms.length; ++ y) {
 
             const dy : number = -64 + y*64;
-            this.platforms[y] = new Platform(dy, 320, -64);
+            this.platforms[y] = new Platform(dy, 320, -64, y == INITIAL_PLATFORM, y > INITIAL_PLATFORM);
         }
 
-        this.player = new Player(128, 32);
+        this.player = new Player(128, 56);
         this.enemies = new Array<Enemy> ();
         this.coins = new Array<Enemy> ();
     }
@@ -65,16 +81,16 @@ export class Stage {
     }
 
 
-    private generateEnemiesAndCoins(platform : Platform) : void {
+    private generateEnemiesAndCoins(platform : Platform, t : number) : void {
 
         const reservedTiles : boolean[] = (new Array<boolean> (14)).fill(false);
 
         // Step 1: enemies
-        const enemyCount : number = sampleWeighted(ENEMY_COUNT_WEIGHTS);
+        const enemyCount : number = sampleWeightedInterpolated(ENEMY_COUNT_WEIGHTS_INITIAL, ENEMY_COUNT_WEIGHTS_FINAL, t);
         for (let i : number = 0; i < enemyCount; ++ i) {
 
             let x : number = 1 + ((Math.random()*14) | 0);
-            const type : EnemyType = (1 + sampleWeighted(ENEMY_WEIGHTS)) as EnemyType;
+            const type : EnemyType = (1 + sampleWeightedInterpolated(ENEMY_WEIGHTS_INITIAL, ENEMY_WEIGHTS_FINAL, t)) as EnemyType;
             if (GROUND_ENEMIES[type]) {
 
                 x = this.findFreeTile(platform, reservedTiles, type == EnemyType.ChainBall);
@@ -92,7 +108,7 @@ export class Stage {
         }
 
         // Step 2: coins
-        const coinCount : number = sampleWeighted(COIN_COUNT_WEIGHTS);
+        const coinCount : number = sampleWeightedInterpolated(COIN_COUNT_WEIGHTS_INITIAL, COIN_COUNT_WEIGHTS_FINAL, t);
         for (let i : number = 0; i < coinCount; ++ i) {
 
             const x : number = this.findFreeTile(platform, reservedTiles);
@@ -143,14 +159,40 @@ export class Stage {
 
     public update(comp : ProgramComponents) : void {
 
+        const SPIKE_ANIMATION_SPEED : number = 1.0/30.0;
+        const BASE_SPEED_DELTA : number = 0.5/120.0;
+        const FINAL_TIME : number = 60*300;
+
+        this.speedUpTimer += comp.tick;
+        if (this.speedUpIndex < SPEED_UP_TIMER.length &&
+            this.speedUpTimer >= SPEED_UP_TIMER[this.speedUpIndex]) {
+
+            ++ this.speedUpIndex;
+        }
+        this.baseSpeedTarget = BASE_SPEEDS[this.speedUpIndex];
+        this.baseSpeed = approachValue(this.baseSpeed, this.baseSpeedTarget, BASE_SPEED_DELTA*comp.tick);
+
+        const t : number = clamp(this.speedUpTimer/FINAL_TIME, 0.0, 1.0);
+
+        this.spikeAnimationTimer = (this.spikeAnimationTimer + SPIKE_ANIMATION_SPEED*comp.tick) % 1.0; 
         this.wallPosition = (this.wallPosition + this.baseSpeed*comp.tick) % 16.0;
 
         this.player.update(this.baseSpeed, comp);
 
-        for (const e of this.enemies) {
+        for (let i : number = 0; i < this.enemies.length; ++ i) {
+
+            const e : Enemy = this.enemies[i];
 
             e.update(this.baseSpeed, comp);
             e.playerCollision(this.player, comp);
+
+            if (e.doesExist() && !e.isDying()) {
+
+                for (let j : number = i + 1; j < this.enemies.length; ++ j) {
+
+                    e.enemyCollision(this.enemies[j]);
+                }
+            }
         }
 
         for (const c of this.coins) {
@@ -161,9 +203,9 @@ export class Stage {
 
         for (const p of this.platforms) {
 
-            if (p.update(this.baseSpeed, comp.tick)) {
+            if (p.update(this.baseSpeed, t, comp.tick)) {
 
-                this.generateEnemiesAndCoins(p);
+                this.generateEnemiesAndCoins(p, t);
             }
             p.playerCollision(this.player, this.baseSpeed, comp.tick);
         }
@@ -181,7 +223,7 @@ export class Stage {
         
         for (const p of this.platforms) {
 
-            p.draw(canvas, bmpTerrain);
+            p.draw(canvas, bmpTerrain, this.spikeAnimationTimer);
         }
 
         this.player.preDraw(canvas);

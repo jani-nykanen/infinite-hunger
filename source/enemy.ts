@@ -9,9 +9,8 @@ import { Rectangle } from "./rectangle.js";
 
 
 const CHAINBALL_DISTANCE : number = 32;
-const ENEMY_RADIUS : number[] = [
-    9, 8, 8, 9, 10, 11, 11
-];
+
+const MOVING_ENEMIES : boolean[] = [false, false, true, false, true, false, false];
 
 
 export const enum EnemyType {
@@ -40,6 +39,8 @@ export class Enemy extends GameObject {
     private deathTimer : number = 0.0;
     private sticky : boolean = false;
 
+    private collisionBox : Rectangle;
+
     private specialFlip : Flip = Flip.None;
 
     private referencePlatform : Platform | undefined = undefined;
@@ -50,6 +51,8 @@ export class Enemy extends GameObject {
         super(0, 0, false);
 
         this.initialPos = Vector.zero();
+
+        this.collisionBox = new Rectangle(0, 0, 12, 12);
     }
 
 
@@ -175,10 +178,7 @@ export class Enemy extends GameObject {
         const FAR_MARGIN : number = 8.0;
         const MIN_SPEED : number = -1.0;
 
-        if (this.sticky ||
-            this.type == EnemyType.Coin || 
-            this.type == EnemyType.Spikeball || 
-            this.type == EnemyType.ChainBall) {
+        if (this.sticky || this.type == EnemyType.Coin) {
 
             return false;
         }
@@ -197,7 +197,16 @@ export class Enemy extends GameObject {
             return false;
         }
 
-        this.kill();
+        if (this.type == EnemyType.Spikeball || 
+            this.type == EnemyType.ChainBall) {
+
+            player.hurt(comp);
+        }
+        else {
+
+            this.kill();
+        }
+
         player.bounce();
 
         return true;
@@ -206,12 +215,14 @@ export class Enemy extends GameObject {
 
     private checkTongueCollision(player : Player, comp : ProgramComponents) : boolean {
 
+        const HIT_RADIUS : number = 12;
+
         if (this.sticky || !player.isTongueActive() || player.getStickyObject() !== null) {
 
             return false;
         }
 
-        if (this.pos.distanceTo(player.getTonguePosition()) < ENEMY_RADIUS[this.type]) {
+        if (this.pos.distanceTo(player.getTonguePosition()) < HIT_RADIUS) {
 
             player.setStickyObject(this);
             this.sticky = true;
@@ -452,11 +463,14 @@ export class Enemy extends GameObject {
         this.frame = 0;
         this.frameTimer = 0.0;
 
-        this.hitbox = new Rectangle(0, 0, 14, 14);
-
+        this.hitbox = new Rectangle(0, 2, 10, 10);
+        
         switch (this.type) {
 
         case EnemyType.Coin:
+
+            this.hitbox = new Rectangle(0, 0, 14, 14);
+            // Fallthrough
         case EnemyType.Slime:
 
             this.frame = (Math.random()*4) | 0;
@@ -479,7 +493,9 @@ export class Enemy extends GameObject {
 
     public playerCollision(player : Player, comp : ProgramComponents) : boolean {
 
-        if (!this.exists || !player.doesExist() || this.dying || player.isDying()) {
+        if (!this.exists || !player.doesExist() 
+            || this.dying || player.isDying() ||
+            this.pos.y < -16) {
 
             return false;
         }
@@ -514,6 +530,36 @@ export class Enemy extends GameObject {
             return true;
         }
         return false;
+    }
+
+
+    public enemyCollision(e : Enemy) : void {
+
+        if (!this.exists || this.dying || !e.exists || e.dying ||
+            this.type == EnemyType.Coin || e.type == EnemyType.Coin) {
+
+            return;
+        }
+
+        const overlay : boolean = Rectangle.overlayShifted(this.pos, this.collisionBox, e.pos, e.collisionBox);
+        if (!overlay) {
+
+            return;
+        }
+
+        if (MOVING_ENEMIES[this.type]) {
+
+            this.direction *= -1;
+            this.speed.x *= -1;
+            this.speedTarget.x *= -1;
+        }
+
+        if (MOVING_ENEMIES[e.type]) {
+
+            e.direction *= -1;
+            e.speed.x *= -1;
+            e.speedTarget.x *= -1;
+        }
     }
 
 

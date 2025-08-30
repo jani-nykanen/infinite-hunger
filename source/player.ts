@@ -21,7 +21,7 @@ export class Player extends GameObject {
     private frame : number = 0;
     private animationTimer : number = 0;
     private flip : Flip = Flip.None;
-    private touchSurface : boolean = false;
+    private touchSurface : boolean = true;
 
     private jumpTimer : number = 0.0;
     private ledgeTimer : number = 0.0;
@@ -45,13 +45,15 @@ export class Player extends GameObject {
         this.dust = new Array<Dust> ();
 
         this.hitbox = new Rectangle(0, 2, 8, 12);
+
+        this.friction.x = 0.225;
     }
 
 
     private controlJumping(controller : Controller) : void {
 
-        const JUMP_TIME : number = 14.0;
-        const DOUBLE_JUMP_TIME : number = 8.0;
+        const JUMP_TIME : number = 16.0;
+        const DOUBLE_JUMP_TIME : number = 10.0;
 
         const jumpButton : ActionState = controller.getAction(Controls.Jump);
         if (jumpButton.state == InputState.Pressed) {
@@ -98,7 +100,7 @@ export class Player extends GameObject {
 
     private control(controller : Controller) : void {
 
-        const RUN_SPEED : number = 1.4;
+        const RUN_SPEED : number = 1.75;
         const BASE_GRAVITY : number = 4.0;
 
         let moveDir : number = 0;
@@ -196,7 +198,7 @@ export class Player extends GameObject {
 
     private updateTimers(tick : number) : void {
 
-        const JUMP_SPEED : number = -2.5;
+        const JUMP_SPEED : number = -2.25;
 
         if (this.hurtTimer > 0.0) {
 

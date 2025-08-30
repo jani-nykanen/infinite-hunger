@@ -92,15 +92,15 @@ const GAME_ART_PALETTE_TABLE : (string | undefined) [] = [
     "H056", "H056", "H067", "H067", "H067", "H065", "E08D", "E08D",
     "H056", "H056", "H067", "H067", "H067", "H065", "H056", "H056",
     "H056", "H056", "30B2", "30B2", "10FG", "I0FG", "I0FG", "000J",
-    "1034", "3042", "H056", "H056", "10FG", "I0FG", "I0FG", "000J",
+    "1042", "3042", "H056", "H056", "10FG", "I0FG", "I0FG", "000J",
     "100J", "100J", "100J", "100J", "100J", "100J", "100J", "100J",
     "100J", "100J", "100J", "100J", "100J", "100J", "100J", "100J",
-    "10KL", "10KL", "10OP", "10MN", "10MN", "10MQ", "10MN", "10MQ",
-    "10Q2", "10KL", "10OP", "10MN", "10MN", "10MQ", "10MN", "10MQ",
+    "10KL", "10KL", "10PD", "10PO", "10MN", "10MQ", "10MN", "10MQ",
+    "10Q2", "10KL", "10PO", "10PO", "10MN", "10MQ", "10MN", "10MQ",
     "1004", "10JS", "10JR", "1042", "1042", "10LD", "10LK", "1042",
-    "1004", "10JR", "10JR", "1042", "1042", "10LK", "10LK", "0000",
-    "10GD", "10GF", "10GF", "10GF", "0000", "0000", "0000", "0000",
-    "10GF", "10GF", "10GF", "10GF", "0000", "0000", "0000", "0000",
+    "1004", "10JR", "10JR", "1042", "1042", "10LK", "10LK", "10KL",
+    "10GD", "10GF", "10GF", "10GF", "10MN", "0000", "0000", "0000",
+    "10GF", "10GF", "10GF", "10GF", "10MN", "0000", "0000", "0000",
 ];
 
 
@@ -171,6 +171,12 @@ const generateTerrainBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
         // ...and fence parts
         canvas.drawBitmap(bmpBase, Flip.None, 192 + i*12, 0, 41, 32, 4, 16);
         canvas.drawBitmap(bmpBase, Flip.None, 220 + i*4, 0, 41, 32, 4, 16);
+
+        // Spikes
+        for (let j : number = 0; j < 2; ++ j) {
+
+            canvas.drawBitmap(bmpBase, Flip.None, 240 + i*8, j*16 + 8, 56, 80 + j*8, 8, 8);
+        }
     }
     canvas.drawBitmap(bmpBase, Flip.None, 124, 24, 56, 16, 8, 8);
 
@@ -234,19 +240,21 @@ const generateGameObjectsBitmap = (assets : Assets, bmpBase : Bitmap) : void => 
     // Spikeball face
     canvas.drawBitmap(bmpBase, Flip.None, 128 + 12, 28, 0, 72, 8, 8);
     // Spikeball chain
-    canvas.drawBitmap(bmpBase, Flip.None, 160, 16, 56, 80, 8, 8);
+    canvas.drawBitmap(bmpBase, Flip.None, 160, 16, 0, 40, 8, 8);
 
 
     for (let i : number = 0; i < 4; ++ i) {
         
         if (i < 2) {
 
-            // Fly base
-            canvas.drawBitmap(bmpBase, Flip.None, 4 + i*16, 16, 16, 64, 8, 16);
             // Left wing
-            canvas.drawBitmap(bmpBase, Flip.None, i*16, 16, 24 + i*4, 64, 4, 16);
+            canvas.drawBitmap(bmpBase, Flip.None, i*16, 16, 32 + i*4, 96, 4, 16);
             // Right wing
-            canvas.drawBitmap(bmpBase, Flip.Horizontal, i*16 + 12, 16, 24 + i*4, 64, 4, 16);
+            canvas.drawBitmap(bmpBase, Flip.Horizontal, i*16 + 12, 16, 32 + i*4, 96, 4, 16);
+            // Bee body
+            canvas.drawBitmap(bmpBase, Flip.None, i*16, 16, 16, 64, 16, 16);
+            // Bee face
+            canvas.drawBitmap(bmpBase, Flip.None, i*16 + 4, 16 + 1, 0, 72, 8, 8);
 
             // Slime base body
             canvas.drawBitmap(bmpBase, Flip.None, 32 + i*32, 16, 32, 64, 16, 16);

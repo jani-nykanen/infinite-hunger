@@ -41,10 +41,7 @@ export class GameObject implements ExistingObject {
 
     protected overlay(o : GameObject) : boolean {
 
-        return this.pos.x + this.hitbox.x + this.hitbox.w/2 >= o.pos.x + o.hitbox.x - o.hitbox.w/2 &&
-               this.pos.x + this.hitbox.x - this.hitbox.w/2 <= o.pos.x + o.hitbox.x + o.hitbox.w/2 &&
-               this.pos.y + this.hitbox.y + this.hitbox.h/2 >= o.pos.y + o.hitbox.y - o.hitbox.h/2 &&
-               this.pos.y + this.hitbox.y - this.hitbox.h/2 <= o.pos.y + o.hitbox.y + o.hitbox.h/2;
+        return Rectangle.overlayShifted(this.pos, this.hitbox, o.pos, o.hitbox);
     }
 
 

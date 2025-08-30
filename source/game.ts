@@ -51,7 +51,7 @@ export class Game extends Program {
         
         this.stage.draw(canvas, this.components.assets);
 
-        // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.GameObjects));
+        // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.Terrain));
     }
 
 
