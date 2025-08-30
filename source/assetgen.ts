@@ -99,8 +99,8 @@ const GAME_ART_PALETTE_TABLE : (string | undefined) [] = [
     "10Q2", "10KL", "10PO", "10PO", "10MN", "10MQ", "10MN", "10MQ",
     "1004", "10JS", "10JR", "1042", "1042", "10LD", "10LK", "1042",
     "1004", "10JR", "10JR", "1042", "1042", "10LK", "10LK", "10KL",
-    "10GD", "10GF", "10GF", "10GF", "10MN", "0000", "0000", "0000",
-    "10GF", "10GF", "10GF", "10GF", "10MN", "0000", "0000", "0000",
+    "10GD", "10GF", "10GF", "10GF", "10MN", "100D", "100D", "100D",
+    "10GF", "10GF", "10GF", "10GF", "10MN", "100D", "100D", "100D",
 ];
 
 
@@ -373,7 +373,7 @@ const generateOutlinedFont = (fontBlack : Bitmap, fontColored : Bitmap) : Bitmap
 
             for (let i : number = -1; i <= 1; ++ i) {
 
-                for (let j : number = -1; j <= 2; ++ j) {
+                for (let j : number = -1; j <= 1; ++ j) {
 
                     if (i == 0 && j == 0) {
 

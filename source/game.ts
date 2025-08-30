@@ -4,6 +4,7 @@ import { generateAssets } from "./assetgen.js";
 import { BitmapIndex, Controls, SampleIndex } from "./mnemonics.js";
 import { Stage } from "./stage.js";
 import { Assets } from "./assets.js";
+import { Stats } from "./stats.js";
 
 
 const enum Scene {
@@ -18,6 +19,7 @@ export class Game extends Program {
 
 
     private stage : Stage;
+    private stats : Stats;
 
     private scene : Scene = Scene.Game;
 
@@ -33,6 +35,8 @@ export class Game extends Program {
             {id: Controls.Pause, keys: ["Escape", "Enter"], specialKeys: [], prevent: false},
         ]);
 
+        this.stats = {score: 0, coins: 0, health: 0};
+
         this.stage = new Stage();
     }
 
@@ -43,6 +47,24 @@ export class Game extends Program {
     }
 
 
+    private drawHUD() : void {
+
+        const canvas : RenderTarget = this.canvas;
+        const bmpBase : Bitmap = this.components.assets.getBitmap(BitmapIndex.Base);
+        const bmpFontOutlines : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontOutlinesWhite);
+
+        // Score
+        const scoreStr : string = String(this.stats.score).padStart(8, "0");
+        canvas.drawBitmap(bmpBase, Flip.None, 16, 1, 40, 96, 24, 8);
+        canvas.drawText(bmpFontOutlines, scoreStr, -2, 6, -9, 0);
+
+        // Bonus
+        const bonusStr : string = "+" + (1.0 + this.stats.coins/10.0).toFixed(1);
+        canvas.drawBitmap(bmpBase, Flip.None, canvas.width - 32, 1, 40, 104, 24, 8);
+        canvas.drawText(bmpFontOutlines, bonusStr, canvas.width - 22, 6, -9, 0, Align.Center);
+    }
+
+
     private drawGameScene() : void {
         
         const canvas : RenderTarget = this.canvas;
@@ -50,6 +72,9 @@ export class Game extends Program {
         canvas.moveTo();
         
         this.stage.draw(canvas, this.components.assets);
+
+        canvas.moveTo();
+        this.drawHUD();
 
         // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.Terrain));
     }

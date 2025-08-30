@@ -28,8 +28,8 @@ const enum Decoration {
 const VINE_LENGTH_WEIGHTS : number[] = [0.0, 0.4, 0.5, 0.1];
 const DECORATION_WEIGHTS : number[] = [0.0, 0.20, 0.20, 0.10, 0.25, 0.25];
 
-const SPIKE_WEIGHTS_INITIAL : number[] = [0.50, 0.40, 0.10, 0.0];
-const SPIKE_WEIGHTS_FINAL : number[] = [0.10, 0.50, 0.30, 0.10];
+const SPIKE_WEIGHTS_INITIAL : number[] = [0.50, 0.40, 0.10, 0.0, 0.0];
+const SPIKE_WEIGHTS_FINAL : number[] = [0.10, 0.30, 0.40, 0.15, 0.05];
 
 
 export class Platform {
@@ -94,6 +94,7 @@ export class Platform {
                 ++ maxSpikeCount;
             }
         }
+        maxSpikeCount = Math.ceil((maxSpikeCount - 1)/2);
 
         const spikeCount : number = Math.min(maxSpikeCount, 
             sampleWeightedInterpolated(SPIKE_WEIGHTS_INITIAL, SPIKE_WEIGHTS_FINAL, t));

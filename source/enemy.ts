@@ -10,7 +10,9 @@ import { Rectangle } from "./rectangle.js";
 
 const CHAINBALL_DISTANCE : number = 32;
 
-const MOVING_ENEMIES : boolean[] = [false, false, true, false, true, false, false];
+const MOVING_ENEMIES : boolean[] = [false, false, true, false, true, false, false, true];
+const HARMFUL_ENEMIES : boolean[] = [false, false, false, false, false, true, true, true];
+const IGNORE_ENEMY_COLLISION : boolean[] = [true, false, false, false, false, false, true, false];
 
 
 export const enum EnemyType {
@@ -22,6 +24,7 @@ export const enum EnemyType {
     Car = 4,
     Spikeball = 5,
     ChainBall = 6,
+    MovingSpikeball = 7,
 }
 
 
@@ -105,17 +108,28 @@ export class Enemy extends GameObject {
     }
 
 
-    private updateMovingBee(baseSpeed : number, tick : number) : void {
+    private updateFlyingMovingObject(baseSpeed : number, isSpikeball : boolean, tick : number) : void {
 
-        const FLY_SPEED : number = 1.0;
+        const FLY_SPEED : number = 0.50;
+        const MINIMAL_MOVE_SPEED : number = 0.5;
 
-        this.updateFloatingBody(4, 90, tick);
-        this.animate(4, 2, tick);
+        if (!isSpikeball) {
+
+            const waveTime : number = 120 - baseSpeed*30;
+            this.updateFloatingBody(4, waveTime, tick);
+            this.animate(4, 2, tick);
+        }
+        else {
+
+            this.pos.y = this.referencePlatform.getY() - 24;
+        }
 
         this.checkWallCollision(16, 14, -1); 
         this.checkWallCollision(240, 14, 1);
 
-        this.speed.x = this.direction*baseSpeed*FLY_SPEED;
+        const speedMod : number = isSpikeball ? 0.5 : 1.0;
+
+        this.speed.x = this.direction*speedMod*(MINIMAL_MOVE_SPEED + baseSpeed*FLY_SPEED);
         this.speedTarget.makeEqual(this.speed);
     }
 
@@ -131,8 +145,9 @@ export class Enemy extends GameObject {
     private updateCar(baseSpeed : number, tick : number) : void {
 
         const MOVE_SPEED : number = 0.5;
+        const MINIMAL_MOVE_SPEED : number = 0.25;
 
-        this.speed.x = this.direction*baseSpeed*MOVE_SPEED;
+        this.speed.x = this.direction*(MINIMAL_MOVE_SPEED + baseSpeed*MOVE_SPEED);
         this.speedTarget.makeEqual(this.speed);
 
         const px : number = (this.pos.x/16) | 0;
@@ -197,8 +212,7 @@ export class Enemy extends GameObject {
             return false;
         }
 
-        if (this.type == EnemyType.Spikeball || 
-            this.type == EnemyType.ChainBall) {
+        if (HARMFUL_ENEMIES[this.type]) {
 
             player.hurt(comp);
         }
@@ -238,7 +252,7 @@ export class Enemy extends GameObject {
 
         if (!player.isTongueActive()) {
 
-            if (this.type == EnemyType.Spikeball || this.type == EnemyType.ChainBall) {
+            if (HARMFUL_ENEMIES[this.type]) {
 
                 player.hurt(comp);
             }
@@ -287,7 +301,7 @@ export class Enemy extends GameObject {
     }
 
 
-    private drawSpikeBall(canvas : RenderTarget, bmp : Bitmap, chained : boolean = false) : void {
+    private drawSpikeBall(canvas : RenderTarget, bmp : Bitmap, chained : boolean, moving : boolean) : void {
 
         const CHAIN_COUNT : number = 6;
 
@@ -308,7 +322,11 @@ export class Enemy extends GameObject {
             }
         }
 
-        canvas.drawBitmap(bmp, this.specialFlip, this.pos.x - 16, this.pos.y - 16, 128, 16, 32, 32);
+        const angle : number | undefined = moving ? -Math.PI/2*this.direction : undefined;
+
+        canvas.drawBitmap(bmp, this.specialFlip, 
+            this.pos.x - 16, this.pos.y - 16, 
+            128, 16, 32, 32, 32, 32, 16, 16, angle);
     }
 
 
@@ -343,13 +361,14 @@ export class Enemy extends GameObject {
 
         case EnemyType.StaticBee:
             
-            this.updateFloatingBody(12, 120, comp.tick);
+            this.updateFloatingBody(12, 160 - 40*baseSpeed, comp.tick);
             this.animate(4, 2, comp.tick);
             break;
 
+        case EnemyType.MovingSpikeball:
         case EnemyType.MovingBee:
 
-            this.updateMovingBee(baseSpeed, comp.tick);
+            this.updateFlyingMovingObject(baseSpeed, this.type == EnemyType.MovingSpikeball, comp.tick);
             break;
 
         case EnemyType.Slime:
@@ -436,8 +455,11 @@ export class Enemy extends GameObject {
 
         case EnemyType.Spikeball:
         case EnemyType.ChainBall:
+        case EnemyType.MovingSpikeball:
 
-            this.drawSpikeBall(canvas, bmp, this.type == EnemyType.ChainBall);
+            this.drawSpikeBall(canvas, bmp, 
+                this.type == EnemyType.ChainBall,
+                this.type == EnemyType.MovingSpikeball);
             break;
 
         default:
@@ -464,8 +486,14 @@ export class Enemy extends GameObject {
         this.frameTimer = 0.0;
 
         this.hitbox = new Rectangle(0, 2, 10, 10);
+        this.collisionBox = new Rectangle(0, 0, 12, 12);
         
         switch (this.type) {
+
+        case EnemyType.StaticBee:
+
+            this.collisionBox.h = 24;
+            break;
 
         case EnemyType.Coin:
 
@@ -536,7 +564,7 @@ export class Enemy extends GameObject {
     public enemyCollision(e : Enemy) : void {
 
         if (!this.exists || this.dying || !e.exists || e.dying ||
-            this.type == EnemyType.Coin || e.type == EnemyType.Coin) {
+            IGNORE_ENEMY_COLLISION[this.type] || IGNORE_ENEMY_COLLISION[e.type]) {
 
             return;
         }
@@ -549,16 +577,20 @@ export class Enemy extends GameObject {
 
         if (MOVING_ENEMIES[this.type]) {
 
-            this.direction *= -1;
-            this.speed.x *= -1;
-            this.speedTarget.x *= -1;
+            this.direction = (this.pos.x < e.pos.x) ? -1 : 1;
+            this.speed.x = Math.abs(this.speed.x)*this.direction;
+            this.speedTarget.x = this.speed.x;
+
+            this.pos.x += this.speed.x;
         }
 
         if (MOVING_ENEMIES[e.type]) {
 
-            e.direction *= -1;
-            e.speed.x *= -1;
-            e.speedTarget.x *= -1;
+            e.direction = (e.pos.x < this.pos.x) ? -1 : 1;
+            e.speed.x = Math.abs(e.speed.x)*e.direction;
+            e.speedTarget.x = e.speed.x;
+
+            e.pos.x += e.speed.x;
         }
     }
 

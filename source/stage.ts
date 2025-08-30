@@ -11,11 +11,11 @@ import { approachValue } from "./utility.js";
 import { clamp } from "./math.js";
 
 
-const ENEMY_WEIGHTS_INITIAL : number[] = [0.30, 0.25, 0.30, 0.15, 0.0, 0.0];
-const ENEMY_WEIGHTS_FINAL : number[] = [0.167, 0.167, 0.167, 0.167, 0.166, 0.66];
+const ENEMY_WEIGHTS_INITIAL : number[] = [0.30, 0.25, 0.30, 0.15, 0.0, 0.0, 0.0];
+const ENEMY_WEIGHTS_FINAL : number[] = [0.125, 0.125, 0.125, 0.125, 0.10, 0.25, 0.15];
 
-const ENEMY_COUNT_WEIGHTS_INITIAL : number[] = [0.20, 0.70, 0.10, 0.0];
-const ENEMY_COUNT_WEIGHTS_FINAL : number[] = [0.10, 0.40, 0.30, 0.20];
+const ENEMY_COUNT_WEIGHTS_INITIAL : number[] = [0.20, 0.60, 0.20, 0.0, 0.0];
+const ENEMY_COUNT_WEIGHTS_FINAL : number[] = [0.0, 0.20, 0.40, 0.30, 0.1];
 
 const COIN_COUNT_WEIGHTS_INITIAL : number[] = [0.50, 0.40, 0.10];
 const COIN_COUNT_WEIGHTS_FINAL : number[] = [0.30, 0.50, 0.20];
@@ -47,18 +47,22 @@ export class Stage {
     
     constructor() {
 
-        const INITIAL_PLATFORM : number = 2;
+        const INITIAL_PLATFORM : number = 3;
+
+        this.player = new Player(128, 120);
+        this.enemies = new Array<Enemy> ();
+        this.coins = new Array<Enemy> ();
 
         this.platforms = new Array<Platform> (6);
         for (let y : number = 0; y < this.platforms.length; ++ y) {
 
             const dy : number = -64 + y*64;
             this.platforms[y] = new Platform(dy, 320, -64, y == INITIAL_PLATFORM, y > INITIAL_PLATFORM);
-        }
+            if (y < INITIAL_PLATFORM) {
 
-        this.player = new Player(128, 56);
-        this.enemies = new Array<Enemy> ();
-        this.coins = new Array<Enemy> ();
+                this.generateEnemiesAndCoins(this.platforms[y], 0.0);
+            }
+        }
     }
 
 
