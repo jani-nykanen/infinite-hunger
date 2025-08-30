@@ -15,6 +15,9 @@ const enum Scene {
 }
 
 
+const HEALTHBAR_COLORS : string[] = ["#ffffff", "#000000", "rgba(0,0,0,0.33)"];
+
+
 export class Game extends Program {
 
 
@@ -37,7 +40,7 @@ export class Game extends Program {
 
         this.stats = {score: 0, coins: 0, health: 0};
 
-        this.stage = new Stage();
+        this.stage = new Stage(this.stats);
     }
 
 
@@ -47,11 +50,16 @@ export class Game extends Program {
     }
 
 
-    private drawHUD() : void {
+    private drawHUD(alpha : number = 1.0) : void {
+
+        const HEALTHBAR_WIDTH : number = 128;
+        const HEALTHBAR_HEIGHT : number = 6;
 
         const canvas : RenderTarget = this.canvas;
         const bmpBase : Bitmap = this.components.assets.getBitmap(BitmapIndex.Base);
         const bmpFontOutlines : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontOutlinesWhite);
+
+        canvas.setAlpha(alpha);
 
         // Score
         const scoreStr : string = String(this.stats.score).padStart(8, "0");
@@ -62,6 +70,37 @@ export class Game extends Program {
         const bonusStr : string = "+" + (1.0 + this.stats.coins/10.0).toFixed(1);
         canvas.drawBitmap(bmpBase, Flip.None, canvas.width - 32, 1, 40, 104, 24, 8);
         canvas.drawText(bmpFontOutlines, bonusStr, canvas.width - 22, 6, -9, 0, Align.Center);
+
+        // Health ("Void")
+        let dw : number = HEALTHBAR_WIDTH + 4;
+        let dh : number = HEALTHBAR_HEIGHT + 4;
+        let dx : number = canvas.width/2 - dw/2;
+        let dy : number = canvas.height - 12;
+
+        for (let i : number = 0; i < 3; ++ i) {
+
+            canvas.setColor(HEALTHBAR_COLORS[i]);
+            if (i == 2) {
+
+                canvas.fillRect(dx, dy, dw, dh);
+            }
+            else {
+
+                canvas.strokeRect(dx, dy, dw, dh);
+            }
+
+            dw -= 2;
+            dh -= 2;
+            dx += 1;
+            dy += 1;
+        }
+        
+        canvas.setAlpha();
+
+        if (alpha < 1.0) {
+
+            canvas.drawText(bmpFontOutlines, "VOID", canvas.width/2, canvas.height - 18, -7, 0, Align.Center);
+        }
     }
 
 
@@ -71,10 +110,10 @@ export class Game extends Program {
 
         canvas.moveTo();
         
-        this.stage.draw(canvas, this.components.assets);
-
-        canvas.moveTo();
+        this.stage.drawEnvironment(canvas, this.components.assets);
         this.drawHUD();
+        this.stage.drawObjects(canvas, this.components.assets);
+        this.drawHUD(0.33);
 
         // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.Terrain));
     }

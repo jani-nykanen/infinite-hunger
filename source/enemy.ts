@@ -6,6 +6,7 @@ import { BitmapIndex, Controls } from "./mnemonics.js";
 import { Platform } from "./platform.js";
 import { Player } from "./player.js";
 import { Rectangle } from "./rectangle.js";
+import { Particle, spawnParticleExplosion } from "./particle.js";
 
 
 const CHAINBALL_DISTANCE : number = 32;
@@ -248,7 +249,7 @@ export class Enemy extends GameObject {
     }
 
 
-    private followTongue(player : Player, comp : ProgramComponents) : void {
+    private followTongue(player : Player, particles : Particle[], comp : ProgramComponents) : void {
 
         if (!player.isTongueActive()) {
 
@@ -256,7 +257,18 @@ export class Enemy extends GameObject {
 
                 player.hurt(comp);
             }
-            this.kill();
+
+            if (this.type == EnemyType.Coin) {
+
+                ++ player.stats.coins;
+                this.kill();
+            }
+            else {
+
+                this.exists = false;
+                spawnParticleExplosion(particles, this.pos, 16);
+            }
+
             return;
         }
 
@@ -519,7 +531,7 @@ export class Enemy extends GameObject {
     }
 
 
-    public playerCollision(player : Player, comp : ProgramComponents) : boolean {
+    public playerCollision(player : Player, particles : Particle[], comp : ProgramComponents) : boolean {
 
         if (!this.exists || !player.doesExist() 
             || this.dying || player.isDying() ||
@@ -530,7 +542,7 @@ export class Enemy extends GameObject {
 
         if (this.sticky && player.getStickyObject() === this) {
 
-            this.followTongue(player, comp);
+            this.followTongue(player, particles, comp);
             return false;
         }
 
@@ -549,6 +561,7 @@ export class Enemy extends GameObject {
             // Coin gets collected
             if (this.type == EnemyType.Coin) {
 
+                ++ player.stats.coins;
                 this.kill();
             }
             else {

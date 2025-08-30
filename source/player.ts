@@ -9,6 +9,7 @@ import { Dust } from "./dust.js";
 import { GameObject } from "./gameobject.js";
 import { nextExistingObject } from "./existingobject.js";
 import { Rectangle } from "./rectangle.js";
+import { Stats } from "./stats.js";
 
 
 const TONGUE_MAX_TIME : number = 16;
@@ -37,8 +38,10 @@ export class Player extends GameObject {
 
     private hurtTimer : number = 0;
 
+    public readonly stats : Stats;
 
-    constructor(x : number, y : number) {
+
+    constructor(x : number, y : number, stats : Stats) {
 
         super(x, y, true);
 
@@ -47,6 +50,8 @@ export class Player extends GameObject {
         this.hitbox = new Rectangle(0, 2, 8, 12);
 
         this.friction.x = 0.225;
+
+        this.stats = stats;
     }
 
 

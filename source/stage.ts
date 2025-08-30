@@ -9,6 +9,8 @@ import { nextExistingObject } from "./existingobject.js";
 import { sampleWeighted, sampleWeightedInterpolated } from "./random.js";
 import { approachValue } from "./utility.js";
 import { clamp } from "./math.js";
+import { Particle } from "./particle.js";
+import { Stats } from "./stats.js";
 
 
 const ENEMY_WEIGHTS_INITIAL : number[] = [0.30, 0.25, 0.30, 0.15, 0.0, 0.0, 0.0];
@@ -43,13 +45,14 @@ export class Stage {
     // that they are always draw after enemies (and take
     // tongue collision also after enemies!)
     private coins : Enemy[];
+    private particles : Particle[];
 
     
-    constructor() {
+    constructor(stats : Stats) {
 
         const INITIAL_PLATFORM : number = 3;
 
-        this.player = new Player(128, 120);
+        this.player = new Player(128, 120, stats);
         this.enemies = new Array<Enemy> ();
         this.coins = new Array<Enemy> ();
 
@@ -63,6 +66,8 @@ export class Stage {
                 this.generateEnemiesAndCoins(this.platforms[y], 0.0);
             }
         }
+
+        this.particles = new Array<Particle> ();
     }
 
 
@@ -161,6 +166,27 @@ export class Stage {
     }
 
 
+    private drawEnemiesAndCoins(canvas : RenderTarget, bmp : Bitmap, foreground : boolean) : void {
+
+        for (const e of this.enemies) {
+
+            if (e.isSticky() != foreground) {
+
+                continue;
+            }
+            e.draw(canvas, bmp);
+        }
+        for (const c of this.coins) {
+
+            if (c.isSticky() != foreground) {
+
+                continue;
+            }
+            c.draw(canvas, bmp);
+        }
+    }
+
+
     public update(comp : ProgramComponents) : void {
 
         const SPIKE_ANIMATION_SPEED : number = 1.0/30.0;
@@ -188,7 +214,7 @@ export class Stage {
             const e : Enemy = this.enemies[i];
 
             e.update(this.baseSpeed, comp);
-            e.playerCollision(this.player, comp);
+            e.playerCollision(this.player, this.particles, comp);
 
             if (e.doesExist() && !e.isDying()) {
 
@@ -202,7 +228,7 @@ export class Stage {
         for (const c of this.coins) {
 
             c.update(this.baseSpeed, comp);
-            c.playerCollision(this.player, comp);
+            c.playerCollision(this.player, this.particles, comp);
         }
 
         for (const p of this.platforms) {
@@ -213,15 +239,18 @@ export class Stage {
             }
             p.playerCollision(this.player, this.baseSpeed, comp.tick);
         }
+    
+        for (const p of this.particles) {
+
+            p.update(this.baseSpeed, comp.tick);
+        }
     }
 
 
-    public draw(canvas : RenderTarget, assets : Assets) : void {
+    public drawEnvironment(canvas : RenderTarget, assets : Assets) : void {
 
         const bmpTerrain : Bitmap = assets.getBitmap(BitmapIndex.Terrain);
         const bmpBackground : Bitmap = assets.getBitmap(BitmapIndex.Background);
-        const bmpObjects : Bitmap = assets.getBitmap(BitmapIndex.GameObjects);
-
         this.drawBackground(canvas, bmpBackground);
         this.drawWalls(canvas, bmpTerrain);
         
@@ -229,45 +258,26 @@ export class Stage {
 
             p.draw(canvas, bmpTerrain, this.spikeAnimationTimer);
         }
+    }
+
+
+    public drawObjects(canvas : RenderTarget, assets : Assets) : void {
+
+        const bmpObjects : Bitmap = assets.getBitmap(BitmapIndex.GameObjects);
 
         this.player.preDraw(canvas);
 
         // Objects behind the player
-        for (const e of this.enemies) {
-
-            if (e.isSticky()) {
-
-                continue;
-            }
-            e.draw(canvas, bmpObjects);
-        }
-        for (const c of this.coins) {
-
-            if (c.isSticky()) {
-
-                continue;
-            }
-            c.draw(canvas, bmpObjects);
-        }
+        this.drawEnemiesAndCoins(canvas, bmpObjects, false);
 
         this.player.draw(canvas, assets);
 
         // Objects in front of the player
-        for (const e of this.enemies) {
+        this.drawEnemiesAndCoins(canvas, bmpObjects, true);
 
-            if (!e.isSticky()) {
+        for (const p of this.particles) {
 
-                continue;
-            }
-            e.draw(canvas, bmpObjects);
-        }
-        for (const c of this.coins) {
-
-            if (!c.isSticky()) {
-
-                continue;
-            }
-            c.draw(canvas, bmpObjects);
+            p.draw(canvas);
         }
     }
 }

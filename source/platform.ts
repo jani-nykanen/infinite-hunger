@@ -417,6 +417,11 @@ export class Platform {
 
     public playerCollision(player : Player, baseSpeed : number, tick : number) : void {
 
+        if (!player.doesExist() || player.isDying() || player.getPosition().y < -9) {
+
+            return;
+        }
+
         for (let i : number = 0; i < this.tiles.length; ++ i) {
 
             if (this.tiles[i] == Tile.Gap) {

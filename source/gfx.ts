@@ -138,6 +138,15 @@ export class RenderTarget {
     }
     
 
+    public strokeRect(dx : number = 0.0, dy : number = 0.0, dw : number = this.width, dh : number = this.height) : void {
+
+        this.fillRect(dx, dy, dw, 1);
+        this.fillRect(dx, dy, 1, dh);
+        this.fillRect(dx, dy + dh - 1, dw, 1);
+        this.fillRect(dx + dw - 1, dy, 1, dh);
+    }
+
+
     public drawBitmap(bmp : Bitmap, flip : Flip = Flip.None,
         dx : number = 0.0, dy : number = 0.0, 
         sx : number = 0.0, sy : number = 0.0, sw : number = bmp.width, sh : number = bmp.height,
