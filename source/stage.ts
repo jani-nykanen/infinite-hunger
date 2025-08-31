@@ -19,8 +19,8 @@ const ENEMY_WEIGHTS_FINAL : number[] = [0.125, 0.125, 0.125, 0.125, 0.10, 0.25, 
 const ENEMY_COUNT_WEIGHTS_INITIAL : number[] = [0.20, 0.60, 0.20, 0.0, 0.0];
 const ENEMY_COUNT_WEIGHTS_FINAL : number[] = [0.0, 0.20, 0.40, 0.30, 0.1];
 
-const COIN_COUNT_WEIGHTS_INITIAL : number[] = [0.50, 0.40, 0.10];
-const COIN_COUNT_WEIGHTS_FINAL : number[] = [0.30, 0.50, 0.20];
+const COIN_COUNT_WEIGHTS_INITIAL : number[] = [0.50, 0.40, 0.10, 0.0];
+const COIN_COUNT_WEIGHTS_FINAL : number[] = [0.30, 0.45, 0.20, 0.05];
 
 const GROUND_ENEMIES : boolean[] = [false, false, false, true, true, false, true];
 
@@ -279,5 +279,13 @@ export class Stage {
 
             p.draw(canvas);
         }
+        
+        this.player.postDraw(canvas, assets);
+    }
+
+
+    public getBaseSpeed() : number {
+
+        return this.baseSpeed;
     }
 }

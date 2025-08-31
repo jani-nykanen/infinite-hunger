@@ -1,6 +1,6 @@
 import { Vector } from "./vector.js";
 import { Assets } from "./assets.js";
-import { Bitmap, Flip, RenderTarget } from "./gfx.js";
+import { Align, Bitmap, Flip, RenderTarget } from "./gfx.js";
 import { ProgramComponents } from "./program.js";
 import { BitmapIndex, Controls } from "./mnemonics.js";
 import { approachValue } from "./utility.js";
@@ -9,11 +9,12 @@ import { Dust } from "./dust.js";
 import { GameObject } from "./gameobject.js";
 import { nextExistingObject } from "./existingobject.js";
 import { Rectangle } from "./rectangle.js";
-import { Stats } from "./stats.js";
+import { addPoints, Stats } from "./stats.js";
 
 
 const TONGUE_MAX_TIME : number = 16;
 const TONGUE_LENGTH_FACTOR : number = 6;
+const STOMP_MULTIPLIER_BASE : number = 0.5;
 
 
 export class Player extends GameObject {
@@ -38,7 +39,9 @@ export class Player extends GameObject {
 
     private hurtTimer : number = 0;
 
-    public readonly stats : Stats;
+    private stompMultiplier : number = 0;
+
+    private readonly stats : Stats;
 
 
     constructor(x : number, y : number, stats : Stats) {
@@ -399,6 +402,23 @@ export class Player extends GameObject {
     }
 
 
+    public postDraw(canvas : RenderTarget, assets : Assets) : void {
+
+        const bmpFontOutlines : Bitmap = assets.getBitmap(BitmapIndex.FontOutlinesWhite);
+
+        if (this.stompMultiplier == 0) {
+
+            return;
+        }
+
+        canvas.setAlpha(0.75);
+        canvas.drawText(bmpFontOutlines, 
+            `+${(1.0 + this.stompMultiplier*STOMP_MULTIPLIER_BASE).toFixed(1)}`,
+            this.pos.x, this.pos.y - 20, -9, 0, Align.Center);
+        canvas.setAlpha();
+    }
+
+
     public floorCollision(x : number, y : number, width : number, platformSpeed : number, tick : number) : boolean {
 
         const COLLISION_WIDTH : number = 8;
@@ -435,17 +455,24 @@ export class Player extends GameObject {
             this.touchSurface = true;
             this.canDoubleJump = true;
 
+            this.stompMultiplier = 0;
+
             return true;
         }
         return false;
     }
 
 
-    public bounce() : void {
+    public bounce(harmful : boolean) : void {
 
         this.speed.y = -3.0;
         this.jumpTimer = 0.0;
         this.canDoubleJump = true;
+
+        if (!harmful) {
+        
+            ++ this.stompMultiplier;
+        }
     }
 
 
@@ -477,7 +504,7 @@ export class Player extends GameObject {
     }
 
 
-    public hurt(comp : ProgramComponents) : void {
+    public hurt(damage : number, comp : ProgramComponents) : void {
 
         const HURT_TIME : number = 60;
 
@@ -488,5 +515,33 @@ export class Player extends GameObject {
         
         // TODO: Sound effect
         this.hurtTimer = HURT_TIME;
+        this.stats.health = Math.max(0.0, this.stats.health - damage);
+
+        this.stompMultiplier = 0;
+    }
+
+
+    public addCoins(amount : number) : void {
+
+        const COIN_POINTS : number = 50;
+
+        this.addPoints(COIN_POINTS);
+        this.stats.coins += amount;
+    }
+
+
+    public addHealth(amount : number) : void {
+
+        const STOMP_EAT_BONUS : number = 0.1;
+
+        amount *= (1.0 + this.stompMultiplier*STOMP_EAT_BONUS);
+
+        this.stats.health = Math.min(1.0, this.stats.health + amount);
+    }
+
+
+    public addPoints(amount : number) : void {
+
+        addPoints(this.stats, (amount*(1.0 + this.stompMultiplier*STOMP_MULTIPLIER_BASE)) | 0);
     }
 }

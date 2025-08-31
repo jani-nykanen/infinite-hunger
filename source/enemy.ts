@@ -16,6 +16,11 @@ const HARMFUL_ENEMIES : boolean[] = [false, false, false, false, false, true, tr
 const IGNORE_ENEMY_COLLISION : boolean[] = [true, false, false, false, false, false, true, false];
 
 
+const EATING_HEALTH : number = 1.0/4.0;
+const EATING_POINTS : number = 100;
+const STOMP_POINTS : number = 200;
+
+
 export const enum EnemyType {
 
     Coin = 0, // Yes, coin is an enemy
@@ -213,16 +218,18 @@ export class Enemy extends GameObject {
             return false;
         }
 
-        if (HARMFUL_ENEMIES[this.type]) {
+        const harmful : boolean = HARMFUL_ENEMIES[this.type];
+        if (harmful) {
 
-            player.hurt(comp);
+            player.hurt(1.0/4.0, comp);
         }
         else {
 
             this.kill();
+            player.addPoints(STOMP_POINTS);
         }
 
-        player.bounce();
+        player.bounce(harmful);
 
         return true;
     }
@@ -255,16 +262,18 @@ export class Enemy extends GameObject {
 
             if (HARMFUL_ENEMIES[this.type]) {
 
-                player.hurt(comp);
+                player.hurt(1.0/5.0, comp);
             }
 
             if (this.type == EnemyType.Coin) {
 
-                ++ player.stats.coins;
+                player.addCoins(1);
                 this.kill();
             }
             else {
 
+                player.addPoints(EATING_POINTS);
+                player.addHealth(EATING_HEALTH);
                 this.exists = false;
                 spawnParticleExplosion(particles, this.pos, 16);
             }
@@ -561,12 +570,12 @@ export class Enemy extends GameObject {
             // Coin gets collected
             if (this.type == EnemyType.Coin) {
 
-                ++ player.stats.coins;
+                player.addCoins(1);
                 this.kill();
             }
             else {
 
-                player.hurt(comp);
+                player.hurt(1.0/4.0, comp);
             }
             return true;
         }
