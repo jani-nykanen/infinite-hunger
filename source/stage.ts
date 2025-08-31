@@ -55,7 +55,9 @@ export class Stage {
 
         const INITIAL_PLATFORM : number = 3;
 
-        this.player = new Player(128, 120, stats);
+        this.particles = new Array<Particle> ();
+
+        this.player = new Player(128, 120, stats, this.particles);
         this.enemies = new Array<Enemy> ();
         this.coins = new Array<Enemy> ();
 
@@ -69,8 +71,6 @@ export class Stage {
                 this.generateEnemiesAndCoins(this.platforms[y], 0.0);
             }
         }
-
-        this.particles = new Array<Particle> ();
 
         this.shake = Vector.zero();
     }
@@ -209,14 +209,23 @@ export class Stage {
         const BASE_SPEED_DELTA : number = 0.5/120.0;
         const FINAL_TIME : number = 60*300;
 
-        this.speedUpTimer += comp.tick;
-        if (this.speedUpIndex < SPEED_UP_TIMER.length &&
-            this.speedUpTimer >= SPEED_UP_TIMER[this.speedUpIndex]) {
+        let speedDelta : number = BASE_SPEED_DELTA;
+        if (!this.player.doesExist()) {
 
-            ++ this.speedUpIndex;
+            this.baseSpeedTarget = 0.0;
+            speedDelta = Math.max(BASE_SPEED_DELTA*2, this.baseSpeedTarget/60.0);
         }
-        this.baseSpeedTarget = BASE_SPEEDS[this.speedUpIndex];
-        this.baseSpeed = approachValue(this.baseSpeed, this.baseSpeedTarget, BASE_SPEED_DELTA*comp.tick);
+        else {
+
+            this.speedUpTimer += comp.tick;
+            if (this.speedUpIndex < SPEED_UP_TIMER.length &&
+                this.speedUpTimer >= SPEED_UP_TIMER[this.speedUpIndex]) {
+
+                ++ this.speedUpIndex;
+            }
+            this.baseSpeedTarget = BASE_SPEEDS[this.speedUpIndex];
+        }
+        this.baseSpeed = approachValue(this.baseSpeed, this.baseSpeedTarget, speedDelta*comp.tick);
 
         const t : number = clamp(this.speedUpTimer/FINAL_TIME, 0.0, 1.0);
 

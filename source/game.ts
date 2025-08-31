@@ -4,7 +4,7 @@ import { generateAssets } from "./assetgen.js";
 import { BitmapIndex, Controls, SampleIndex } from "./mnemonics.js";
 import { Stage } from "./stage.js";
 import { Assets } from "./assets.js";
-import { addPoints, Stats } from "./stats.js";
+import { Stats } from "./stats.js";
 import { approachValue } from "./utility.js";
 import { clamp } from "./math.js";
 
@@ -26,9 +26,7 @@ export class Game extends Program {
     private stage : Stage;
     private stats : Stats;
 
-    private healthBarTarget : number;
     private healthBarWave : number = 0.0;
-    private visibleScore : number = 0.0;
 
     private scene : Scene = Scene.Game;
 
@@ -44,34 +42,19 @@ export class Game extends Program {
             {id: Controls.Pause, keys: ["Escape", "Enter"], prevent: false},
         ]);
 
-        this.stats = {score: 0, coins: 0, health: 0.5};
-        this.healthBarTarget = this.stats.health;
-
+        this.stats = new Stats(0.5);
         this.stage = new Stage(this.stats);
     }
 
 
     private updateGameScene() : void {
-        
-        const HEALTH_REDUCTION : number = (1.0/10.0)/60.0;
-        const HEALTH_BAR_APPROACH_SPEED : number = 1.0/120.0;
+
         const HEALTH_BAR_WAVE_SPEED : number = Math.PI*2.0/90.0;
 
-        const scoreApproachSpeed : number = 10 + this.stats.coins;
-        this.visibleScore = approachValue(
-            this.visibleScore, 
-            this.stats.score, 
-            scoreApproachSpeed*this.components.tick);
-
         this.healthBarWave = (this.healthBarWave + HEALTH_BAR_WAVE_SPEED*this.components.tick) % (Math.PI*2.0);
-        this.stats.health = Math.max(0.0, 
-            this.stats.health - HEALTH_REDUCTION*this.stage.getBaseSpeed()*this.components.tick);
+
         this.stage.update(this.components);
-    
-        this.healthBarTarget = approachValue(
-            this.healthBarTarget, 
-            this.stats.health, 
-            HEALTH_BAR_APPROACH_SPEED*this.components.tick);
+        this.stats.update(this.stage.getBaseSpeed(), this.components.tick);
     }
 
 
@@ -87,7 +70,7 @@ export class Game extends Program {
         canvas.setAlpha(alpha);
 
         // Score
-        const scoreStr : string = String(this.visibleScore | 0).padStart(8, "0");
+        const scoreStr : string = String(this.stats.visibleScore | 0).padStart(8, "0");
         canvas.drawBitmap(bmpBase, Flip.None, 16, 1, 40, 96, 24, 8);
         canvas.drawText(bmpFontOutlines, scoreStr, -2, 6, -9, 0);
 
@@ -98,7 +81,7 @@ export class Game extends Program {
 
         // Health ("Void")
 
-        if (this.healthBarTarget <= 0.0 && (this.healthBarWave % (Math.PI/2)) < Math.PI/4) {
+        if (this.stats.visibleHealth <= 0.0 && (this.healthBarWave % (Math.PI/2)) < Math.PI/4) {
 
             canvas.setAlpha();
             return;
@@ -130,10 +113,10 @@ export class Game extends Program {
             }
         }
 
-        if (this.healthBarTarget > 0.0) {
+        if (this.stats.visibleHealth > 0.0) {
 
-            const t : number = this.healthBarTarget*2.0;
-            const w : number = this.healthBarTarget*HEALTHBAR_WIDTH;
+            const t : number = this.stats.visibleHealth*2.0;
+            const w : number = this.stats.visibleHealth*HEALTHBAR_WIDTH;
 
             const r : number = Math.max(0.0, t*182 + (1.0 - t)*219);
             const g : number = t*109;
@@ -153,7 +136,9 @@ export class Game extends Program {
 
         if (alpha < 1.0) {
 
-            canvas.drawText(bmpFontOutlines, "VOID", canvas.width/2, canvas.height - 18, -7, 0, Align.Center);
+            canvas.drawText(bmpFontOutlines, "VOID", canvas.width/2, canvas.height - 18, -7, 0, Align.Center,
+                Math.PI*2, 1, this.healthBarWave*2
+            );
         }
     }
 

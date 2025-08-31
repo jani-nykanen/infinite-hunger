@@ -9,7 +9,8 @@ import { Dust } from "./dust.js";
 import { GameObject } from "./gameobject.js";
 import { nextExistingObject } from "./existingobject.js";
 import { Rectangle } from "./rectangle.js";
-import { addPoints, Stats } from "./stats.js";
+import { Stats } from "./stats.js";
+import { Particle, spawnParticleExplosion } from "./particle.js";
 
 
 const TONGUE_MAX_TIME : number = 16;
@@ -43,9 +44,10 @@ export class Player extends GameObject {
     private stompMultiplier : number = 0;
 
     private readonly stats : Stats;
+    private readonly particles : Particle[];
 
 
-    constructor(x : number, y : number, stats : Stats) {
+    constructor(x : number, y : number, stats : Stats, particles : Particle[]) {
 
         super(x, y, true);
 
@@ -56,6 +58,7 @@ export class Player extends GameObject {
         this.friction.x = 0.225;
 
         this.stats = stats;
+        this.particles = particles;
     }
 
 
@@ -278,6 +281,16 @@ export class Player extends GameObject {
     }
 
 
+    private kill(comp : ProgramComponents) : void {
+
+        spawnParticleExplosion(this.particles, this.pos, 32);
+
+        this.exists = false;
+
+        // TODO: Sound effect?
+    }
+
+
     private checkWallCollisions() : void {
 
         const COLLISION_WIDTH : number = 8;
@@ -326,6 +339,21 @@ export class Player extends GameObject {
 
     public update(baseSpeed : number, comp : ProgramComponents) : void {
 
+        if (!this.exists) { 
+
+            // Needed for the shake event
+            if (this.hurtTimer > 0) {
+
+                this.hurtTimer -= comp.tick;
+            }
+
+            for (const d of this.dust) {
+
+                d.update(baseSpeed, comp.tick);
+            }
+            return;
+        }
+
         this.control(comp.controller);
         this.move(comp.tick);
         this.animate(comp.tick);
@@ -335,10 +363,9 @@ export class Player extends GameObject {
 
         this.touchSurface = false;
 
-        // TEMP!
         if (this.pos.y > 192 + 8) {
 
-            this.pos.y -= 192 + 16;
+            this.kill(comp);
         }
     }
 
@@ -365,7 +392,8 @@ export class Player extends GameObject {
         const dx : number = this.pos.x - 8;
         const dy : number = this.pos.y - 7;
 
-        if (this.hurtTimer > 0 && Math.floor(this.hurtTimer/4) % 2 == 0) {
+        if (!this.exists ||
+            (this.hurtTimer > 0 && Math.floor(this.hurtTimer/4) % 2 == 0)) {
 
             return;
         }
@@ -407,7 +435,7 @@ export class Player extends GameObject {
 
         const bmpFontOutlines : Bitmap = assets.getBitmap(BitmapIndex.FontOutlinesWhite);
 
-        if (this.stompMultiplier == 0) {
+        if (!this.exists || this.stompMultiplier == 0) {
 
             return;
         }
@@ -527,10 +555,17 @@ export class Player extends GameObject {
 
             return;
         }
-        
-        // TODO: Sound effect
+
         this.hurtTimer = HURT_TIME;
-        this.stats.health = Math.max(0.0, this.stats.health - damage);
+        if (this.stats.visibleHealth <= 0.0) {
+
+            this.kill(comp);
+            return;
+        }
+
+        // TODO: Sound effect
+
+        this.stats.updateHealth(-damage);
 
         this.stompMultiplier = 0;
     }
@@ -550,14 +585,13 @@ export class Player extends GameObject {
         const STOMP_EAT_BONUS : number = 0.1;
 
         amount *= (1.0 + this.stompMultiplier*STOMP_EAT_BONUS);
-
-        this.stats.health = Math.min(1.0, this.stats.health + amount);
+        this.stats.updateHealth(amount);
     }
 
 
     public addPoints(amount : number) : void {
 
-        addPoints(this.stats, (amount*(1.0 + this.stompMultiplier*STOMP_MULTIPLIER_BASE)) | 0);
+        this.stats.addPoints((amount*(1.0 + this.stompMultiplier*STOMP_MULTIPLIER_BASE)) | 0);
     }
 
 
