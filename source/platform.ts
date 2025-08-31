@@ -1,5 +1,6 @@
 import { Bitmap, Flip, RenderTarget } from "./gfx.js";
 import { Player } from "./player.js";
+import { ProgramComponents } from "./program.js";
 import { sampleWeighted, sampleWeightedInterpolated } from "./random.js";
 
 
@@ -415,7 +416,7 @@ export class Platform {
     }
 
 
-    public playerCollision(player : Player, baseSpeed : number, tick : number) : void {
+    public playerCollision(player : Player, baseSpeed : number, comp : ProgramComponents) : void {
 
         if (!player.doesExist() || player.isDying() || player.getPosition().y < -9) {
 
@@ -428,7 +429,14 @@ export class Platform {
 
                 continue;
             }
-            player.floorCollision(16 + i*16, this.y, 16, baseSpeed, tick);
+
+            // Due to a bug there can be spikes on bridges, they are just not
+            // drawn..
+            if (this.tiles[i] == Tile.Ground && this.spikes[i]) {
+
+                player.spikeCollision(16 + i*16 + 8, this.y - 4, 10, 6, comp);
+            }
+            player.floorCollision(16 + i*16, this.y, 16, baseSpeed, comp.tick);
         }
     }
 

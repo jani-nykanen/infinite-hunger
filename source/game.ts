@@ -36,12 +36,12 @@ export class Game extends Program {
     constructor(audioCtx : AudioContext) {
 
         super(audioCtx, 256, 192, [
-            {id: Controls.Right, keys: ["ArrowRight"], specialKeys: [], prevent: true},
-            {id: Controls.Left, keys: ["ArrowLeft"], specialKeys: [], prevent: true},
-            {id: Controls.Jump, keys: ["Space", "KeyZ"], specialKeys: [], prevent: true},
-            {id: Controls.Tongue, keys: ["ControlLeft", "KeyX"], specialKeys: [], prevent: true},
-            {id: Controls.Select, keys: ["Space", "Enter"], specialKeys: [], prevent: true},
-            {id: Controls.Pause, keys: ["Escape", "Enter"], specialKeys: [], prevent: false},
+            {id: Controls.Right, keys: ["ArrowRight"], prevent: true},
+            {id: Controls.Left, keys: ["ArrowLeft"], prevent: true},
+            {id: Controls.Jump, keys: ["Space", "KeyZ"], prevent: true},
+            {id: Controls.Tongue, keys: ["ControlLeft", "KeyX"], prevent: true},
+            {id: Controls.Select, keys: ["Space", "Enter"], prevent: true},
+            {id: Controls.Pause, keys: ["Escape", "Enter"], prevent: false},
         ]);
 
         this.stats = {score: 0, coins: 0, health: 0.5};

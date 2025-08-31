@@ -15,6 +15,7 @@ import { addPoints, Stats } from "./stats.js";
 const TONGUE_MAX_TIME : number = 16;
 const TONGUE_LENGTH_FACTOR : number = 6;
 const STOMP_MULTIPLIER_BASE : number = 0.5;
+const HURT_TIME : number = 60;
 
 
 export class Player extends GameObject {
@@ -60,8 +61,8 @@ export class Player extends GameObject {
 
     private controlJumping(controller : Controller) : void {
 
-        const JUMP_TIME : number = 16.0;
-        const DOUBLE_JUMP_TIME : number = 10.0;
+        const JUMP_TIME : number = 20.0;
+        const DOUBLE_JUMP_TIME : number = 14.0;
 
         const jumpButton : ActionState = controller.getAction(Controls.Jump);
         if (jumpButton.state == InputState.Pressed) {
@@ -204,9 +205,7 @@ export class Player extends GameObject {
     }
 
 
-    private updateTimers(tick : number) : void {
-
-        const JUMP_SPEED : number = -2.25;
+    private updateTimers(baseSpeed : number, tick : number) : void {
 
         if (this.hurtTimer > 0.0) {
 
@@ -220,7 +219,9 @@ export class Player extends GameObject {
 
         if (this.jumpTimer > 0.0) {
 
-            this.speed.y = JUMP_SPEED;
+            const jumpSpeed : number = -2.85 + baseSpeed;
+
+            this.speed.y = jumpSpeed;
             this.jumpTimer -= tick;
         }
 
@@ -328,7 +329,7 @@ export class Player extends GameObject {
         this.control(comp.controller);
         this.move(comp.tick);
         this.animate(comp.tick);
-        this.updateTimers(comp.tick);
+        this.updateTimers(baseSpeed, comp.tick);
         this.updateDust(baseSpeed, comp.tick);
         this.checkWallCollisions();
 
@@ -430,7 +431,7 @@ export class Player extends GameObject {
         const TOP_CHECK_AREA : number = 2.0;
         const BOTTOM_CHECK_AREA : number = 4.0;
 
-        if (this.speed.y < SPEED_THRESHOLD) {
+        if (this.dying || !this.exists || this.speed.y < SPEED_THRESHOLD) {
 
             return false;
         }
@@ -460,6 +461,22 @@ export class Player extends GameObject {
             return true;
         }
         return false;
+    }
+
+
+    public spikeCollision(dx : number, dy : number, dw : number, dh : number, comp : ProgramComponents) : void {
+
+        const DAMAGE : number = 1.0/4.0;
+
+        if (this.dying || !this.exists || this.hurtTimer > 0) {
+
+            return;
+        }
+
+        if (Rectangle.overlayShifted(this.pos, this.hitbox, new Vector(dx, dy), new Rectangle(0, 0, dw, dh))) {
+
+            this.hurt(DAMAGE, comp);
+        }
     }
 
 
@@ -506,8 +523,6 @@ export class Player extends GameObject {
 
     public hurt(damage : number, comp : ProgramComponents) : void {
 
-        const HURT_TIME : number = 60;
-
         if (this.hurtTimer > 0.0) {
 
             return;
@@ -543,5 +558,11 @@ export class Player extends GameObject {
     public addPoints(amount : number) : void {
 
         addPoints(this.stats, (amount*(1.0 + this.stompMultiplier*STOMP_MULTIPLIER_BASE)) | 0);
+    }
+
+
+    public getHurtTimer() : number {
+
+        return this.hurtTimer/HURT_TIME;
     }
 }

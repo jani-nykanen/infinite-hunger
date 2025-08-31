@@ -11,6 +11,7 @@ import { approachValue } from "./utility.js";
 import { clamp } from "./math.js";
 import { Particle } from "./particle.js";
 import { Stats } from "./stats.js";
+import { Vector } from "./vector.js";
 
 
 const ENEMY_WEIGHTS_INITIAL : number[] = [0.30, 0.25, 0.30, 0.15, 0.0, 0.0, 0.0];
@@ -47,6 +48,8 @@ export class Stage {
     private coins : Enemy[];
     private particles : Particle[];
 
+    private shake : Vector;
+
     
     constructor(stats : Stats) {
 
@@ -68,6 +71,8 @@ export class Stage {
         }
 
         this.particles = new Array<Particle> ();
+
+        this.shake = Vector.zero();
     }
 
 
@@ -152,9 +157,9 @@ export class Stage {
         for (let y : number = -1; y < 12; ++ y) {
 
             // Left
-            canvas.drawBitmap(bmp, Flip.None, 0, y*16 + this.wallPosition, 48, 0, 16, 16);
+            canvas.drawBitmap(bmp, Flip.None, -8, y*16 + this.wallPosition, 40, 0, 24, 16);
             // Right
-            canvas.drawBitmap(bmp, Flip.None, canvas.width - 16, y*16 + this.wallPosition, 32, 0, 16, 16);
+            canvas.drawBitmap(bmp, Flip.None, canvas.width - 16, y*16 + this.wallPosition, 32, 0, 24, 16);
         }
 
         // Black outlines to outer edge
@@ -187,8 +192,19 @@ export class Stage {
     }
 
 
+    private applyShake(canvas : RenderTarget) : void {
+
+        if (this.player.getHurtTimer() < 0.5) {
+
+            return;
+        }
+        canvas.move(this.shake.x, this.shake.y);
+    }
+
+
     public update(comp : ProgramComponents) : void {
 
+        const SHAKE_AMOUNT : number = 3;
         const SPIKE_ANIMATION_SPEED : number = 1.0/30.0;
         const BASE_SPEED_DELTA : number = 0.5/120.0;
         const FINAL_TIME : number = 60*300;
@@ -208,6 +224,12 @@ export class Stage {
         this.wallPosition = (this.wallPosition + this.baseSpeed*comp.tick) % 16.0;
 
         this.player.update(this.baseSpeed, comp);
+        if (this.player.getHurtTimer() >= 0.5) {
+
+            this.shake.setValues(
+                (-1 + Math.random()*2)*SHAKE_AMOUNT,
+                (-1 + Math.random()*2)*SHAKE_AMOUNT);
+        }
 
         for (let i : number = 0; i < this.enemies.length; ++ i) {
 
@@ -237,7 +259,7 @@ export class Stage {
 
                 this.generateEnemiesAndCoins(p, t);
             }
-            p.playerCollision(this.player, this.baseSpeed, comp.tick);
+            p.playerCollision(this.player, this.baseSpeed, comp);
         }
     
         for (const p of this.particles) {
@@ -251,19 +273,26 @@ export class Stage {
 
         const bmpTerrain : Bitmap = assets.getBitmap(BitmapIndex.Terrain);
         const bmpBackground : Bitmap = assets.getBitmap(BitmapIndex.Background);
+
         this.drawBackground(canvas, bmpBackground);
+
+        this.applyShake(canvas);
         this.drawWalls(canvas, bmpTerrain);
         
         for (const p of this.platforms) {
 
             p.draw(canvas, bmpTerrain, this.spikeAnimationTimer);
         }
+
+        canvas.moveTo();
     }
 
 
     public drawObjects(canvas : RenderTarget, assets : Assets) : void {
 
         const bmpObjects : Bitmap = assets.getBitmap(BitmapIndex.GameObjects);
+
+        this.applyShake(canvas);
 
         this.player.preDraw(canvas);
 
@@ -281,6 +310,8 @@ export class Stage {
         }
         
         this.player.postDraw(canvas, assets);
+
+        canvas.moveTo();
     }
 
 

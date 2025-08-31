@@ -11,7 +11,7 @@ export const enum InputState {
 };
 
 
-export type ActionConfig = {id : number, keys: string[], specialKeys: string[], prevent: boolean};
+export type ActionConfig = {id : number, keys: string[], prevent: boolean};
 export type ActionState = {state : InputState, timestamp : number};
 
 
@@ -19,15 +19,13 @@ class Action {
 
 
     public keys : string[];
-    public specialKeys : string[];
     public state : InputState = InputState.Up;
     public timestamp : number = 0.0;
 
 
-    constructor(keys : string[] = [], specialKeys : string[] = []) {
+    constructor(keys : string[] = []) {
 
         this.keys = keys;
-        this.specialKeys = specialKeys;
     }
 
 
@@ -41,10 +39,6 @@ class Action {
 export class Controller {
 
     private keyStates : Map<string, [InputState, number]>;
-    // NOTE: Misleading name here: "special key" is one that takes
-    // event.key intead of event.code, i.e. the physical location
-    // does not matter, but what the key actual is.
-    private specialKeyStates : Map<string, [InputState, number]>;
 
     private actions : Map<number, Action>;
     private preventableKeys : string[];
@@ -55,8 +49,6 @@ export class Controller {
     constructor(actions : ActionConfig[]) {
 
         this.keyStates = new Map<string, [InputState, number]> ();
-        this.specialKeyStates = new Map<string, [InputState, number]> ();
-
         this.actions = new Map<number, Action> ();
 
         const preventableRaw : string[] = [];
@@ -67,9 +59,8 @@ export class Controller {
             if (a.prevent) {
 
                 preventableRaw.push(...a.keys);
-                preventableSpecialRaw.push(...a.specialKeys);
             }
-            this.actions.set(a.id, new Action(a.keys, a.specialKeys));
+            this.actions.set(a.id, new Action(a.keys));
         }
         // This way we *prevent* duplicates
         this.preventableKeys = Array.from(new Set(preventableRaw));
@@ -84,7 +75,6 @@ export class Controller {
                 ev.preventDefault();
             }
             this.inputEvent(this.keyStates, ev.code, ev.timeStamp, true);
-            this.inputEvent(this.specialKeyStates, ev.key, ev.timeStamp, true);
         });
         window.addEventListener("keyup", (ev : KeyboardEvent) : void => {
 
@@ -94,7 +84,6 @@ export class Controller {
                 ev.preventDefault();
             }
             this.inputEvent(this.keyStates, ev.code, ev.timeStamp, false);
-            this.inputEvent(this.specialKeyStates, ev.key, ev.timeStamp, false);
         });
 
         window.addEventListener("mousemove", (ev : MouseEvent) : void => window.focus());
@@ -176,26 +165,6 @@ export class Controller {
                 }
             }
         }
-
-        if (action.state != InputState.Up) {
-
-            return;
-        }
-
-        // Check "special" keys
-        for (const k of action.specialKeys) {
-
-            const state : [InputState, number] = this.specialKeyStates.get(k) ?? [InputState.Up, 0.0];
-
-            if (state[0] != InputState.Up) {
-
-                action.state = state[0];
-                if (state[1] > action.timestamp) {
-                    
-                    action.timestamp = state[1];
-                }
-            }
-        }
     } 
 
 
@@ -212,7 +181,6 @@ export class Controller {
     public postUpdate() : void {
 
         this.updateStateArray(this.keyStates);
-        this.updateStateArray(this.specialKeyStates);
 
         this.anyPressed = false;
     }
