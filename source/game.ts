@@ -19,6 +19,8 @@ const enum Scene {
 
 const HEALTHBAR_COLORS : string[] = ["#ffffff", "#000000", "rgba(0,0,0,0.33)"];
 
+const GAMEOVER_APPEAR_TIME : number = 30;
+
 
 export class Game extends Program {
 
@@ -26,7 +28,9 @@ export class Game extends Program {
     private stage : Stage;
     private stats : Stats;
 
-    private healthBarWave : number = 0.0;
+    private waveTimer : number = 0.0;
+    private gameoverTimer : number = 0;
+    private gameoverPhase : number = 0;
 
     private scene : Scene = Scene.Game;
 
@@ -47,14 +51,82 @@ export class Game extends Program {
     }
 
 
+    private restartGame() : void {
+
+        this.stats.reset(0.5);
+        this.stage = new Stage(this.stats);
+    }
+
+
     private updateGameScene() : void {
 
-        const HEALTH_BAR_WAVE_SPEED : number = Math.PI*2.0/90.0;
+        const WAVE_SPEED : number = Math.PI*2.0/90.0;
 
-        this.healthBarWave = (this.healthBarWave + HEALTH_BAR_WAVE_SPEED*this.components.tick) % (Math.PI*2.0);
+        this.waveTimer = (this.waveTimer + WAVE_SPEED*this.components.tick) % (Math.PI*2.0);
+
+        if (this.gameoverPhase == 1) {
+
+            this.gameoverTimer += this.components.tick;
+            if (this.gameoverTimer >= GAMEOVER_APPEAR_TIME) {
+
+                this.gameoverTimer = GAMEOVER_APPEAR_TIME;
+                this.gameoverPhase = 2;
+            }
+            return;
+        }
+        else if (this.gameoverPhase == 2) {
+
+            if (this.components.controller.anythingPressed()) {
+
+                this.gameoverPhase = 0;
+                this.restartGame();
+            }
+            return;
+        }
 
         this.stage.update(this.components);
         this.stats.update(this.stage.getBaseSpeed(), this.components.tick);
+
+        if (this.stage.isGameOver() && this.stage.getBaseSpeed() <= 0.0) {
+
+            this.stats.storeRecord();
+            this.gameoverPhase = 1;
+            this.gameoverTimer = 0;
+        }
+    }
+
+
+    private drawGameoverScreen() : void {
+
+        if (this.gameoverPhase == 0) {
+
+            return;
+        }
+
+        const canvas : RenderTarget = this.canvas;
+        const bmpFontOutlines : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontOutlinesWhite);
+        const bmpGameover : Bitmap = this.components.assets.getBitmap(BitmapIndex.GameOver);
+
+        const shifty : number = canvas.height/2*(1.0 - this.gameoverTimer/GAMEOVER_APPEAR_TIME);
+        
+        canvas.setColor("rgba(0,0,0,0.50)");
+        canvas.fillRect();
+
+        canvas.moveTo(0, -shifty);
+        canvas.drawHorizontallyWavingBitmap(bmpGameover, 4, Math.PI*16, this.waveTimer, Flip.None, canvas.width/2 - bmpGameover.width/2, 16);
+
+        canvas.moveTo(0, shifty);
+        canvas.drawText(bmpFontOutlines, "SCORE:", canvas.width/2, canvas.height/2, -8, 0, Align.Center);
+        canvas.drawText(bmpFontOutlines, 
+            String(this.stats.score | 0).padStart(8, "0"), 
+            canvas.width/2, canvas.height/2 + 12, -8, 0, Align.Center);
+
+        canvas.drawText(bmpFontOutlines, "HI-SCORE:", canvas.width/2, canvas.height/2 + 40, -8, 0, Align.Center);
+        canvas.drawText(bmpFontOutlines, 
+            String(this.stats.hiscore | 0).padStart(8, "0"), 
+            canvas.width/2, canvas.height/2 + 52, -8, 0, Align.Center);
+
+        canvas.moveTo();
     }
 
 
@@ -62,6 +134,11 @@ export class Game extends Program {
 
         const HEALTHBAR_WIDTH : number = 128;
         const HEALTHBAR_HEIGHT : number = 6;
+
+        if (this.gameoverPhase > 0) {
+
+            return;
+        }
 
         const canvas : RenderTarget = this.canvas;
         const bmpBase : Bitmap = this.components.assets.getBitmap(BitmapIndex.Base);
@@ -79,9 +156,13 @@ export class Game extends Program {
         canvas.drawBitmap(bmpBase, Flip.None, canvas.width - 32, 1, 40, 104, 24, 8);
         canvas.drawText(bmpFontOutlines, bonusStr, canvas.width - 22, 6, -9, 0, Align.Center);
 
+        //
         // Health ("Void")
+        // 
 
-        if (this.stats.visibleHealth <= 0.0 && (this.healthBarWave % (Math.PI/2)) < Math.PI/4) {
+        if (this.stage.isGameOver() ||
+            (this.stats.visibleHealth <= 0.0 && 
+            (this.waveTimer % (Math.PI/2)) < Math.PI/4)) {
 
             canvas.setAlpha();
             return;
@@ -127,7 +208,7 @@ export class Game extends Program {
             const period : number = Math.PI/HEALTHBAR_HEIGHT;
             for (let y : number = 0; y < HEALTHBAR_HEIGHT; ++ y) {
 
-                const shift : number = Math.sin(y*period + this.healthBarWave)*2;
+                const shift : number = Math.sin(y*period + this.waveTimer)*2;
                 canvas.fillRect(dx, dy + y, clamp(w + shift, 0, HEALTHBAR_WIDTH), 1);
             }
         }
@@ -137,7 +218,7 @@ export class Game extends Program {
         if (alpha < 1.0) {
 
             canvas.drawText(bmpFontOutlines, "VOID", canvas.width/2, canvas.height - 18, -7, 0, Align.Center,
-                Math.PI*2, 1, this.healthBarWave*2
+                Math.PI*2, 1, this.waveTimer*2
             );
         }
     }
@@ -153,6 +234,8 @@ export class Game extends Program {
         this.drawHUD();
         this.stage.drawObjects(canvas, this.components.assets);
         this.drawHUD(0.33);
+
+        this.drawGameoverScreen();
 
         // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.Terrain));
     }

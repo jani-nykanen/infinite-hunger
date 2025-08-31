@@ -210,13 +210,10 @@ export class RenderTarget {
         sw : number = bmp.width, sh : number = bmp.height) : void {
 
         const phaseStep : number = Math.PI*2/period;
-        // TODO: This should not work like this
-        const xshift : number = -Math.sin(shift)*amplitude/2;
-
         for (let y : number = 0; y < sh; ++ y) {
 
             const phase : number = shift + phaseStep*y;
-            const x : number = dx + Math.sin(phase)*amplitude + xshift;
+            const x : number = dx + Math.sin(phase)*amplitude;
             const py : number = (flip & Flip.Vertical) != 0 ? (sh - 1) - y : y;
 
             this.drawBitmap(bmp, Flip.Horizontal & flip, x, dy + y, sx, sy + py, sw, 1);

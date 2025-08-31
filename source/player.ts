@@ -365,6 +365,7 @@ export class Player extends GameObject {
 
         if (this.pos.y > 192 + 8) {
 
+            this.hurtTimer = HURT_TIME; // This enables shake
             this.kill(comp);
         }
     }

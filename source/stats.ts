@@ -2,23 +2,33 @@ import { clamp } from "./math.js";
 import { approachValue } from "./utility.js";
 
 
+const LOCALSTORAGE_KEY : string = "lsjn25b";
+
+
 export class Stats {
 
     
-    private score : number = 0;
     private health : number;
 
     // These are public to save bytes
+    public score : number = 0;
     public coins : number = 0;
     public visibleHealth : number;
     public visibleScore : number = 0;
     public scoreDelta : number = 0;
+    public hiscore : number = 0;
 
 
     constructor(initialHealth : number) {
 
         this.health = initialHealth;
         this.visibleHealth = initialHealth;
+
+        try {
+
+            this.hiscore = Number(window["localStorage"]["getItem"](LOCALSTORAGE_KEY) ?? "0");
+        }
+        catch(e) {}
     }
 
 
@@ -27,6 +37,8 @@ export class Stats {
         const v : number = points*(1.0 + this.coins/10.0);
         this.score += v;
         this.scoreDelta = Math.max(5, v/20.0);
+
+        this.hiscore = Math.max(this.hiscore, this.score);
     }
 
     
@@ -53,5 +65,31 @@ export class Stats {
     
         this.health = Math.max(0.0, 
             this.health - HEALTH_REDUCTION*baseSpeed*tick);
+    }
+
+
+    public storeRecord() : void {
+
+        if (this.score < this.hiscore) {
+            
+            return;
+        }
+
+        try {
+
+            window["localStorage"]["setItem"](LOCALSTORAGE_KEY, String(this.hiscore));
+        }
+        catch(e) {}
+    }
+
+
+    public reset(initialHealth : number) : void {
+
+        this.score = 0;
+        this.health = initialHealth;
+        this.coins = 0;
+        this.visibleHealth = initialHealth;
+        this.visibleScore = 0;
+        this.scoreDelta = 0;
     }
 }

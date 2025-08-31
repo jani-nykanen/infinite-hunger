@@ -413,6 +413,15 @@ const generateFonts = (assets : Assets, rgb333 : PaletteLookup) : void => {
     // Outlined fonts
     assets.addBitmap(BitmapIndex.FontOutlinesWhite, 
         generateOutlinedFont(bmpFontBlack, bmpFontWhite));
+
+    // Close enough to fonts
+    assets.addBitmap(BitmapIndex.GameOver,
+        createBigText(
+        "GAME\nOVER!", "bold 32px Arial", 128, 64, 28, 4, [
+            [255, 146, 0],
+            [182, 36, 0]
+        ])
+    );
 }
 
 

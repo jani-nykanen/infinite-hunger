@@ -328,4 +328,10 @@ export class Stage {
 
         return this.baseSpeed;
     }
+
+
+    public isGameOver() : boolean {
+
+        return !this.player.doesExist();
+    }
 }
