@@ -2,7 +2,7 @@ import { GameObject } from "./gameobject.js";
 import { Vector } from "./vector.js";
 import { Bitmap, Flip, RenderTarget } from "./gfx.js";
 import { ProgramComponents } from "./program.js";
-import { BitmapIndex, Controls } from "./mnemonics.js";
+import { BitmapIndex, Controls, SampleIndex } from "./mnemonics.js";
 import { Platform } from "./platform.js";
 import { Player } from "./player.js";
 import { Rectangle } from "./rectangle.js";
@@ -267,6 +267,7 @@ export class Enemy extends GameObject {
 
             if (this.type == EnemyType.Coin) {
 
+                comp.audio.playSample(comp.assets.getSample(SampleIndex.Coin), 0.60);
                 player.addCoins(1);
                 this.kill();
             }
@@ -514,11 +515,18 @@ export class Enemy extends GameObject {
         case EnemyType.StaticBee:
 
             this.collisionBox.h = 24;
+            // Fallthrough
+        case EnemyType.MovingBee:
+        case EnemyType.Spikeball:
+        case EnemyType.MovingSpikeball:
+
+            this.pos.y -= 24;
             break;
 
         case EnemyType.Coin:
 
             this.hitbox = new Rectangle(0, 0, 14, 14);
+            this.pos.y -= 24;
             // Fallthrough
         case EnemyType.Slime:
 
@@ -526,7 +534,6 @@ export class Enemy extends GameObject {
             break;
 
         case EnemyType.ChainBall:
-
             this.specialTimer = Math.PI/4 + (Math.random()*Math.PI/2);
             break;
 
@@ -549,9 +556,12 @@ export class Enemy extends GameObject {
             return false;
         }
 
-        if (this.sticky && player.getStickyObject() === this) {
+        if (this.sticky) {
 
-            this.followTongue(player, particles, comp);
+            if (player.getStickyObject() === this) {
+            
+                this.followTongue(player, particles, comp);
+            }
             return false;
         }
 
@@ -570,6 +580,7 @@ export class Enemy extends GameObject {
             // Coin gets collected
             if (this.type == EnemyType.Coin) {
 
+                comp.audio.playSample(comp.assets.getSample(SampleIndex.Coin), 0.60);
                 player.addCoins(1);
                 this.kill();
             }
@@ -585,7 +596,8 @@ export class Enemy extends GameObject {
 
     public enemyCollision(e : Enemy) : void {
 
-        if (!this.exists || this.dying || !e.exists || e.dying ||
+        if (!this.exists || this.dying || this.sticky ||
+            !e.exists || e.dying || e.sticky ||
             IGNORE_ENEMY_COLLISION[this.type] || IGNORE_ENEMY_COLLISION[e.type]) {
 
             return;

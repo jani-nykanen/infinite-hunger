@@ -427,7 +427,26 @@ const generateFonts = (assets : Assets, rgb333 : PaletteLookup) : void => {
 
 const generateSamples = (assets : Assets, audio : AudioPlayer) : void => {
 
-    // ...
+    assets.addSample(SampleIndex.Coin, 
+        audio.createSample(
+            [160, 4, 0.60,
+            100, 2, 0.80,
+            256, 10, 1.00],
+            0.35,
+            OscType.Square, 
+            Ramp.Instant)
+        );
+
+    assets.addSample(SampleIndex.Jump, 
+        audio.createSample(
+            [96,  4, 0.50,
+            112, 3, 0.80,
+            160, 4, 0.60,
+            224, 5, 0.20], 
+            0.80,
+            OscType.Sawtooth, 
+            Ramp.Exponential)
+        );
 }
 
 

@@ -2,7 +2,7 @@ import { Vector } from "./vector.js";
 import { Assets } from "./assets.js";
 import { Align, Bitmap, Flip, RenderTarget } from "./gfx.js";
 import { ProgramComponents } from "./program.js";
-import { BitmapIndex, Controls } from "./mnemonics.js";
+import { BitmapIndex, Controls, SampleIndex } from "./mnemonics.js";
 import { approachValue } from "./utility.js";
 import { ActionState, Controller, InputState } from "./controller.js";
 import { Dust } from "./dust.js";
@@ -62,12 +62,12 @@ export class Player extends GameObject {
     }
 
 
-    private controlJumping(controller : Controller) : void {
+    private controlJumping(comp : ProgramComponents) : void {
 
         const JUMP_TIME : number = 20.0;
         const DOUBLE_JUMP_TIME : number = 14.0;
 
-        const jumpButton : ActionState = controller.getAction(Controls.Jump);
+        const jumpButton : ActionState = comp.controller.getAction(Controls.Jump);
         if (jumpButton.state == InputState.Pressed) {
 
             const canJumpNormally : boolean = this.ledgeTimer > 0.0;
@@ -81,6 +81,8 @@ export class Player extends GameObject {
                 this.jumpTimer = canJumpNormally ? JUMP_TIME : DOUBLE_JUMP_TIME;
                 this.touchSurface = false;
                 this.ledgeTimer = 0.0;
+
+                comp.audio.playSample(comp.assets.getSample(SampleIndex.Jump), 0.60);
             }
         }
         else if (this.jumpTimer > 0 && (jumpButton.state & InputState.DownOrPressed) == 0) {
@@ -110,14 +112,14 @@ export class Player extends GameObject {
     }
 
 
-    private control(controller : Controller) : void {
+    private control(comp : ProgramComponents) : void {
 
         const RUN_SPEED : number = 1.75;
         const BASE_GRAVITY : number = 4.0;
 
         let moveDir : number = 0;
-        const left : ActionState = controller.getAction(Controls.Left);
-        const right : ActionState = controller.getAction(Controls.Right);
+        const left : ActionState = comp.controller.getAction(Controls.Left);
+        const right : ActionState = comp.controller.getAction(Controls.Right);
         const maxStamp : number = Math.max(left.timestamp, right.timestamp);
 
         let flipFlag : Flip = this.flip;
@@ -141,8 +143,8 @@ export class Player extends GameObject {
         this.speedTarget.x = moveDir*RUN_SPEED;
         this.speedTarget.y = BASE_GRAVITY;
 
-        this.controlJumping(controller);
-        this.controlTongue(controller);
+        this.controlJumping(comp);
+        this.controlTongue(comp.controller);
     }
 
 
@@ -354,7 +356,7 @@ export class Player extends GameObject {
             return;
         }
 
-        this.control(comp.controller);
+        this.control(comp);
         this.move(comp.tick);
         this.animate(comp.tick);
         this.updateTimers(baseSpeed, comp.tick);

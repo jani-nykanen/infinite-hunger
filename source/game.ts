@@ -7,6 +7,7 @@ import { Assets } from "./assets.js";
 import { Stats } from "./stats.js";
 import { approachValue } from "./utility.js";
 import { clamp } from "./math.js";
+import { InputState } from "./controller.js";
 
 
 const enum Scene {
@@ -20,6 +21,7 @@ const enum Scene {
 const HEALTHBAR_COLORS : string[] = ["#ffffff", "#000000", "rgba(0,0,0,0.33)"];
 
 const GAMEOVER_APPEAR_TIME : number = 30;
+const FADE_TIME : number = 20;
 
 
 export class Game extends Program {
@@ -32,7 +34,12 @@ export class Game extends Program {
     private gameoverTimer : number = 0;
     private gameoverPhase : number = 0;
 
+    private fadeTimer : number = FADE_TIME;
+    private fadingIn : boolean = false;
+
     private scene : Scene = Scene.Game;
+
+    private paused : boolean = false;
 
 
     constructor(audioCtx : AudioContext) {
@@ -53,6 +60,7 @@ export class Game extends Program {
 
     private restartGame() : void {
 
+        this.gameoverPhase = 0;
         this.stats.reset(0.5);
         this.stage = new Stage(this.stats);
     }
@@ -62,7 +70,30 @@ export class Game extends Program {
 
         const WAVE_SPEED : number = Math.PI*2.0/90.0;
 
-        this.waveTimer = (this.waveTimer + WAVE_SPEED*this.components.tick) % (Math.PI*2.0);
+        if (this.fadeTimer > 0) {
+
+            this.fadeTimer -= this.components.tick;
+            if (this.fadeTimer <= 0) {
+
+                if (this.fadingIn) {
+
+                    this.fadeTimer += FADE_TIME;
+                    this.fadingIn = false;
+                
+                    this.restartGame();
+                }
+                else {
+
+                    this.fadeTimer = 0;
+                }
+            }
+            return;
+        }
+
+        if (!this.paused) {
+        
+            this.waveTimer = (this.waveTimer + WAVE_SPEED*this.components.tick) % (Math.PI*2.0);
+        }
 
         if (this.gameoverPhase == 1) {
 
@@ -78,9 +109,19 @@ export class Game extends Program {
 
             if (this.components.controller.anythingPressed()) {
 
-                this.gameoverPhase = 0;
-                this.restartGame();
+                this.fadeTimer = FADE_TIME;
+                this.fadingIn = true;
             }
+            return;
+        }
+
+        if (this.components.controller.getAction(Controls.Pause).state == InputState.Pressed) {
+
+            // TODO: Sound effect
+            this.paused = !this.paused;
+        }
+        if (this.paused) {
+
             return;
         }
 
@@ -236,6 +277,22 @@ export class Game extends Program {
         this.drawHUD(0.33);
 
         this.drawGameoverScreen();
+
+        if (this.fadeTimer > 0) {
+
+            const t : number = this.fadingIn ? 1.0 - this.fadeTimer/FADE_TIME : this.fadeTimer/FADE_TIME;
+            canvas.setColor(`rgba(0,0,0,${t})`);
+            canvas.fillRect();
+        }
+
+        if (this.paused) {
+
+            const bmpFontOutlines : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontOutlinesWhite);
+
+            canvas.setColor("rgba(0,0,0,0.5)");
+            canvas.fillRect();
+            canvas.drawText(bmpFontOutlines, "PAUSED", canvas.width/2, canvas.height/2 - 8, -8, 0, Align.Center);
+        }
 
         // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.Terrain));
     }

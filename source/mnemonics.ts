@@ -19,6 +19,11 @@ export const enum BitmapIndex {
 
 export const enum SampleIndex {
 
+    Jump = 0,
+    Coin = 1,
+    Hurt = 2,
+    Stomp = 3,
+    Eat = 4,
 }
 
 
