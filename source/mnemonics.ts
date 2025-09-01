@@ -24,6 +24,8 @@ export const enum SampleIndex {
     Hurt = 2,
     Stomp = 3,
     Eat = 4,
+    Tongue = 5,
+    GetStuck = 6,
 }
 
 

@@ -245,7 +245,7 @@ export class Stage {
             const e : Enemy = this.enemies[i];
 
             e.update(this.baseSpeed, comp);
-            e.playerCollision(this.player, this.particles, comp);
+            e.playerCollision(this.player, this.baseSpeed, this.particles, comp);
 
             if (e.doesExist() && !e.isDying()) {
 
@@ -259,7 +259,7 @@ export class Stage {
         for (const c of this.coins) {
 
             c.update(this.baseSpeed, comp);
-            c.playerCollision(this.player, this.particles, comp);
+            c.playerCollision(this.player, this.baseSpeed, this.particles, comp);
         }
 
         for (const p of this.platforms) {

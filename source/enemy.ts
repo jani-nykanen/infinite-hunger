@@ -191,7 +191,7 @@ export class Enemy extends GameObject {
     }
 
 
-    private checkStompCollision(player : Player, comp : ProgramComponents) : boolean {
+    private checkStompCollision(baseSpeed : number, player : Player, comp : ProgramComponents) : boolean {
 
         const STOMP_WIDTH : number = 28;
         const STOMP_YOFF : number = 12.0;
@@ -227,9 +227,11 @@ export class Enemy extends GameObject {
 
             this.kill();
             player.addPoints(STOMP_POINTS);
+
+            comp.audio.playSample(comp.assets.getSample(SampleIndex.Stomp), 0.80);
         }
 
-        player.bounce(harmful);
+        player.bounce(baseSpeed, harmful);
 
         return true;
     }
@@ -249,6 +251,8 @@ export class Enemy extends GameObject {
             player.setStickyObject(this);
             this.sticky = true;
             this.frame = 0;
+
+            comp.audio.playSample(comp.assets.getSample(SampleIndex.GetStuck), 0.60);
 
             return true;
         }
@@ -277,6 +281,8 @@ export class Enemy extends GameObject {
                 player.addHealth(EATING_HEALTH);
                 this.exists = false;
                 spawnParticleExplosion(particles, this.pos, 16);
+
+                comp.audio.playSample(comp.assets.getSample(SampleIndex.Eat), 0.60);
             }
 
             return;
@@ -547,7 +553,8 @@ export class Enemy extends GameObject {
     }
 
 
-    public playerCollision(player : Player, particles : Particle[], comp : ProgramComponents) : boolean {
+    public playerCollision(player : Player, baseSpeed : number,
+        particles : Particle[], comp : ProgramComponents) : boolean {
 
         if (!this.exists || !player.doesExist() 
             || this.dying || player.isDying() ||
@@ -570,7 +577,7 @@ export class Enemy extends GameObject {
             return false;
         }
 
-        if (this.checkStompCollision(player, comp)) {
+        if (this.checkStompCollision(baseSpeed, player, comp)) {
 
             return true;
         }

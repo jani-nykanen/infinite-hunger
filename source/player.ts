@@ -82,7 +82,7 @@ export class Player extends GameObject {
                 this.touchSurface = false;
                 this.ledgeTimer = 0.0;
 
-                comp.audio.playSample(comp.assets.getSample(SampleIndex.Jump), 0.60);
+                comp.audio.playSample(comp.assets.getSample(SampleIndex.Jump), 0.70);
             }
         }
         else if (this.jumpTimer > 0 && (jumpButton.state & InputState.DownOrPressed) == 0) {
@@ -92,9 +92,9 @@ export class Player extends GameObject {
     }
 
 
-    private controlTongue(controller : Controller) : void {
+    private controlTongue(comp : ProgramComponents) : void {
 
-        const tongueButtonState : InputState = controller.getAction(Controls.Tongue).state;
+        const tongueButtonState : InputState = comp.controller.getAction(Controls.Tongue).state;
 
         if (tongueButtonState == InputState.Pressed && !this.tongueOut) {
 
@@ -103,6 +103,8 @@ export class Player extends GameObject {
             this.tongueTimer = 0.0;
 
             this.stickyObject = null;
+
+            comp.audio.playSample(comp.assets.getSample(SampleIndex.Tongue), 0.70);
         }
         else if (this.tongueTimer >= TONGUE_MAX_TIME/2 &&
             (tongueButtonState & InputState.DownOrPressed) == 0) {
@@ -144,7 +146,7 @@ export class Player extends GameObject {
         this.speedTarget.y = BASE_GRAVITY;
 
         this.controlJumping(comp);
-        this.controlTongue(comp.controller);
+        this.controlTongue(comp);
     }
 
 
@@ -369,6 +371,8 @@ export class Player extends GameObject {
 
             this.hurtTimer = HURT_TIME; // This enables shake
             this.kill(comp);
+
+            comp.audio.playSample(comp.assets.getSample(SampleIndex.Hurt), 0.60);
         }
     }
 
@@ -511,9 +515,9 @@ export class Player extends GameObject {
     }
 
 
-    public bounce(harmful : boolean) : void {
+    public bounce(baseSpeed : number, harmful : boolean) : void {
 
-        this.speed.y = -3.0;
+        this.speed.y = -3.5 + baseSpeed;
         this.jumpTimer = 0.0;
         this.canDoubleJump = true;
 
@@ -559,6 +563,8 @@ export class Player extends GameObject {
             return;
         }
 
+        comp.audio.playSample(comp.assets.getSample(SampleIndex.Hurt), 0.60);
+            
         this.hurtTimer = HURT_TIME;
         if (this.stats.visibleHealth <= 0.0) {
 

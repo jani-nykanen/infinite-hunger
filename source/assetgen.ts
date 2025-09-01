@@ -432,7 +432,7 @@ const generateSamples = (assets : Assets, audio : AudioPlayer) : void => {
             [160, 4, 0.60,
             100, 2, 0.80,
             256, 10, 1.00],
-            0.35,
+            0.60,
             OscType.Square, 
             Ramp.Instant)
         );
@@ -445,6 +445,57 @@ const generateSamples = (assets : Assets, audio : AudioPlayer) : void => {
             224, 5, 0.20], 
             0.80,
             OscType.Sawtooth, 
+            Ramp.Exponential)
+        );
+
+    assets.addSample(SampleIndex.Stomp,
+        audio.createSample(
+            [112, 3, 0.70,
+            80, 4, 1.0,
+            96, 8, 0.50],
+            0.80,
+            OscType.Sawtooth, 
+            Ramp.Exponential)
+        );
+
+    assets.addSample(SampleIndex.Hurt,
+        audio.createSample(
+            [128, 3, 0.80,
+            96, 4, 1.0,
+            80, 8, 0.50],
+            0.70,
+            OscType.Square, 
+            Ramp.Exponential)
+        );
+
+    assets.addSample(SampleIndex.Tongue,
+        audio.createSample(
+            [144, 2, 0.80,
+             112, 2, 1.0,
+             144, 2, 1.0,
+             128, 4, 0.5
+            ],
+            0.70,
+            OscType.Sawtooth, 
+            Ramp.Exponential)
+        );
+
+    assets.addSample(SampleIndex.Eat,
+        audio.createSample(
+            [112, 3, 0.80,
+            80, 4, 1.0,
+            96, 8, 0.50],
+            0.60,
+            OscType.Square, 
+            Ramp.Exponential)
+        );
+
+    assets.addSample(SampleIndex.GetStuck,
+        audio.createSample(
+            [160, 2, 1.0,
+            96, 4, 0.50 ],
+            0.60,
+            OscType.Square, 
             Ramp.Exponential)
         );
 }
