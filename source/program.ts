@@ -2,7 +2,6 @@ import { ActionConfig, Controller } from "./controller.js";
 import { RenderTarget } from "./gfx.js";
 import { Assets } from "./assets.js";
 import { AudioPlayer } from "./audioplayer.js";
-import { Transition } from "./transition.js";
 
 
 export type ProgramComponents = {
@@ -10,7 +9,6 @@ export type ProgramComponents = {
     controller : Controller,
     audio : AudioPlayer,
     assets : Assets,
-    transition : Transition,
     tick : number,
 }
 
@@ -38,7 +36,6 @@ export class Program {
             controller: new Controller(controllerActions),
             audio: new AudioPlayer(audioCtx, globalAudioVolume),
             assets: new Assets(),
-            transition: new Transition(canvasWidth, canvasHeight),
             tick: 1.0/ticksPerSecond/(1.0/60.0),
         }
 
@@ -90,7 +87,6 @@ export class Program {
 
             if (this.initialized) {
 
-                this.components.transition.update(this.components.tick);
                 this.onUpdate();
             }
 
@@ -112,7 +108,6 @@ export class Program {
             if (loaded) {
 
                 this.onRedraw();
-                this.components.transition.draw(this.canvas);
             }
             else {
 

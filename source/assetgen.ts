@@ -498,6 +498,15 @@ const generateSamples = (assets : Assets, audio : AudioPlayer) : void => {
             OscType.Square, 
             Ramp.Exponential)
         );
+
+    assets.addSample(SampleIndex.Start,
+        audio.createSample( 
+            [120, 8, 1.0,
+            88, 4, 0.30], 
+            0.40,
+            OscType.Square, 
+            Ramp.Instant)
+    );
 }
 
 

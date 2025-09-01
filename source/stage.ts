@@ -213,7 +213,7 @@ export class Stage {
         if (!this.player.doesExist()) {
 
             this.baseSpeedTarget = 0.0;
-            speedDelta = Math.max(BASE_SPEED_DELTA*2, this.baseSpeedTarget/60.0);
+            speedDelta = Math.max(BASE_SPEED_DELTA*3, this.baseSpeedTarget/60.0);
         }
         else {
 

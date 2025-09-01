@@ -109,6 +109,8 @@ export class Game extends Program {
 
             if (this.components.controller.anythingPressed()) {
 
+                this.components.audio.playSample(this.components.assets.getSample(SampleIndex.Start), 0.60);
+
                 this.fadeTimer = FADE_TIME;
                 this.fadingIn = true;
             }
@@ -117,7 +119,7 @@ export class Game extends Program {
 
         if (this.components.controller.getAction(Controls.Pause).state == InputState.Pressed) {
 
-            // TODO: Sound effect
+            this.components.audio.playSample(this.components.assets.getSample(SampleIndex.Start), 0.60);
             this.paused = !this.paused;
         }
         if (this.paused) {
