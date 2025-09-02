@@ -202,7 +202,7 @@ export class Stage {
     }
 
 
-    public update(comp : ProgramComponents) : void {
+    public update(canControl : boolean, comp : ProgramComponents) : void {
 
         const SHAKE_AMOUNT : number = 3;
         const SPIKE_ANIMATION_SPEED : number = 1.0/30.0;
@@ -215,7 +215,7 @@ export class Stage {
             this.baseSpeedTarget = 0.0;
             speedDelta = Math.max(BASE_SPEED_DELTA*3, this.baseSpeedTarget/60.0);
         }
-        else {
+        else if (canControl) {
 
             this.speedUpTimer += comp.tick;
             if (this.speedUpIndex < SPEED_UP_TIMER.length &&
@@ -232,7 +232,11 @@ export class Stage {
         this.spikeAnimationTimer = (this.spikeAnimationTimer + SPIKE_ANIMATION_SPEED*comp.tick) % 1.0; 
         this.wallPosition = (this.wallPosition + this.baseSpeed*comp.tick) % 16.0;
 
-        this.player.update(this.baseSpeed, comp);
+        if (canControl) {
+            
+            this.player.update(this.baseSpeed, comp);
+        }
+        
         if (this.player.getHurtTimer() >= 0.5) {
 
             this.shake.setValues(

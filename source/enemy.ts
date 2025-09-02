@@ -267,6 +267,9 @@ export class Enemy extends GameObject {
             if (HARMFUL_ENEMIES[this.type]) {
 
                 player.hurt(1.0/5.0, comp);
+                this.exists = false;
+                spawnParticleExplosion(particles, this.pos, 16);
+                return;
             }
 
             if (this.type == EnemyType.Coin) {
@@ -521,18 +524,11 @@ export class Enemy extends GameObject {
         case EnemyType.StaticBee:
 
             this.collisionBox.h = 24;
-            // Fallthrough
-        case EnemyType.MovingBee:
-        case EnemyType.Spikeball:
-        case EnemyType.MovingSpikeball:
-
-            this.pos.y -= 24;
             break;
 
         case EnemyType.Coin:
 
             this.hitbox = new Rectangle(0, 0, 14, 14);
-            this.pos.y -= 24;
             // Fallthrough
         case EnemyType.Slime:
 

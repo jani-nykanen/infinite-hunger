@@ -8,12 +8,13 @@ export const enum BitmapIndex {
     FontWhite = 2,
     FontYellow = 3,
     FontOutlinesWhite = 4,
-    Base = 5,
+    FontOutlinesYellow = 5,
+    Base = 6,
 
-    Terrain = 6,
-    GameObjects = 7,
-    Background = 8,
-    GameOver = 9,
+    Terrain = 7,
+    GameObjects = 8,
+    Background = 9,
+    GameOver = 10,
 }
 
 
@@ -27,6 +28,8 @@ export const enum SampleIndex {
     Tongue = 5,
     GetStuck = 6,
     Start = 7,
+    Ready = 8,
+    Go = 9,
 }
 
 

@@ -75,12 +75,14 @@ const PALETTE_TABLE : number[] = [
     0b110111111, // N Very bright blue
 
     0b110100000, // O Brownish thing
-    0b111110011, // P Yellow
+    0b111110011, // P Orange-ish yellow
 
     0b001011100, // Q Darker blue
 
     0b100010101, // R Dark purple
     0b111110111, // S Bright pink
+
+    0b111110010, // T Normal yellow
 
 ];
 
@@ -399,7 +401,7 @@ const generateFonts = (assets : Assets, rgb333 : PaletteLookup) : void => {
         (new Array<(string | undefined)>(16*4)).fill("0002"), 
         PALETTE_TABLE, rgb333);
     const bmpFontYellow : Bitmap = applyPalette(bmpFontRaw, 
-        (new Array<(string | undefined)>(16*4)).fill("000M"), 
+        (new Array<(string | undefined)>(16*4)).fill("000T"), 
         PALETTE_TABLE, rgb333);
     const bmpFontBlack : Bitmap = applyPalette(bmpFontRaw, 
         (new Array<(string | undefined)>(16*4)).fill("0001"), 
@@ -413,6 +415,8 @@ const generateFonts = (assets : Assets, rgb333 : PaletteLookup) : void => {
     // Outlined fonts
     assets.addBitmap(BitmapIndex.FontOutlinesWhite, 
         generateOutlinedFont(bmpFontBlack, bmpFontWhite));
+    assets.addBitmap(BitmapIndex.FontOutlinesYellow, 
+        generateOutlinedFont(bmpFontBlack, bmpFontYellow));
 
     // Close enough to fonts
     assets.addBitmap(BitmapIndex.GameOver,
@@ -507,6 +511,19 @@ const generateSamples = (assets : Assets, audio : AudioPlayer) : void => {
             OscType.Square, 
             Ramp.Instant)
     );
+
+    for (let i : number = 0; i < 2; ++ i) {
+
+        assets.addSample(
+            (SampleIndex.Ready + i) as SampleIndex,
+                audio.createSample( 
+                    [112 + i*32, 16, 1.0,
+                    88 + i*8, 2, 0.30], 
+                    0.40,
+                    OscType.Square, 
+                    Ramp.Instant)
+            );
+    }
 }
 
 

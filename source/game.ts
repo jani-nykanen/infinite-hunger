@@ -22,6 +22,9 @@ const HEALTHBAR_COLORS : string[] = ["#ffffff", "#000000", "rgba(0,0,0,0.33)"];
 
 const GAMEOVER_APPEAR_TIME : number = 30;
 const FADE_TIME : number = 20;
+const CONTROLS_TIME : number = 180;
+const READY_TIME : number = 90;
+const READY_APPEAR_TIME : number = 30;
 
 
 export class Game extends Program {
@@ -36,6 +39,10 @@ export class Game extends Program {
 
     private fadeTimer : number = FADE_TIME;
     private fadingIn : boolean = false;
+    
+    private controlsTimer : number = CONTROLS_TIME;
+    private readyPhase : number = 0;
+    private readyTimer : number = 0;
 
     private scene : Scene = Scene.Game;
 
@@ -55,14 +62,20 @@ export class Game extends Program {
 
         this.stats = new Stats(0.5);
         this.stage = new Stage(this.stats);
+        this.stage.update(false, this.components);
     }
 
 
     private restartGame() : void {
 
         this.gameoverPhase = 0;
+        this.controlsTimer = CONTROLS_TIME;
+        this.readyPhase = 0;
+        this.readyTimer = 0;
+
         this.stats.reset(0.5);
         this.stage = new Stage(this.stats);
+        this.stage.update(false, this.components);
     }
 
 
@@ -119,7 +132,8 @@ export class Game extends Program {
 
         if (this.components.controller.getAction(Controls.Pause).state == InputState.Pressed) {
 
-            this.components.audio.playSample(this.components.assets.getSample(SampleIndex.Start), 0.60);
+            this.components.audio.playSample(
+                this.components.assets.getSample(SampleIndex.Start), 0.60);
             this.paused = !this.paused;
         }
         if (this.paused) {
@@ -127,7 +141,36 @@ export class Game extends Program {
             return;
         }
 
-        this.stage.update(this.components);
+        if (this.controlsTimer > 0) {
+
+            this.controlsTimer -= this.components.tick;
+        }
+
+        if (this.readyPhase < 2) {
+
+            const oldTime : number = this.readyTimer;
+            this.readyTimer += this.components.tick;
+            if (this.readyPhase == 0 &&
+                oldTime < READY_APPEAR_TIME && this.readyTimer >= READY_APPEAR_TIME) {
+
+                this.components.audio.playSample(
+                    this.components.assets.getSample(SampleIndex.Ready), 0.60);
+            }
+
+            if (this.readyTimer >= READY_TIME) {
+
+                if (this.readyPhase == 0) {
+
+                    this.components.audio.playSample(
+                        this.components.assets.getSample(SampleIndex.Go), 0.60);
+                }
+
+                ++ this.readyPhase;
+                this.readyTimer -= READY_TIME;
+            }
+        }
+
+        this.stage.update(this.readyPhase > 0, this.components);
         this.stats.update(this.stage.getBaseSpeed(), this.components.tick);
 
         if (this.stage.isGameOver() && this.stage.getBaseSpeed() <= 0.0) {
@@ -200,7 +243,7 @@ export class Game extends Program {
         canvas.drawText(bmpFontOutlines, bonusStr, canvas.width - 22, 6, -9, 0, Align.Center);
 
         //
-        // Health ("Void")
+        // Health
         // 
 
         if (this.stage.isGameOver() ||
@@ -260,15 +303,68 @@ export class Game extends Program {
 
         if (alpha < 1.0) {
 
-            canvas.drawText(bmpFontOutlines, "VOID", canvas.width/2, canvas.height - 18, -7, 0, Align.Center,
+            canvas.drawText(bmpFontOutlines, "HUNGER", canvas.width/2, canvas.height - 18, -7, 0, Align.Center,
                 Math.PI*2, 1, this.waveTimer*2
             );
         }
     }
 
 
+    private drawControls(t : number) : void {
+     
+        const canvas : RenderTarget = this.canvas;
+
+        const bmpFontOutlinesWhite : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontOutlinesWhite);
+        const bmpFontOutlinesYellow : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontOutlinesYellow);
+
+        canvas.drawText(bmpFontOutlinesYellow, " MOVE:", 64*(t - 1.0), canvas.height/2, -8, 0, Align.Left);
+        canvas.drawText(bmpFontOutlinesWhite, "ARROWS", 64*(t - 1.0), canvas.height/2 + 12, -8, 0, Align.Left);
+
+        canvas.drawText(bmpFontOutlinesYellow, " JUMP:", 64*(t - 1.0), canvas.height/2 + 40, -8, 0, Align.Left);
+        canvas.drawText(bmpFontOutlinesWhite, "SPACE/Z", 64*(t - 1.0), canvas.height/2 + 52, -8, 0, Align.Left);
+    
+        canvas.drawText(bmpFontOutlinesYellow, "TONGUE:", canvas.width + 64*(1.0 - t), canvas.height/2 + 20, -8, 0, Align.Right);
+        canvas.drawText(bmpFontOutlinesWhite, "L.CTRL/X", canvas.width + 64*(1.0 - t), canvas.height/2 + 32, -8, 0, Align.Right);
+    }
+
+
+    private drawReadyScreen() : void {
+
+        if (this.fadeTimer > 0) {
+
+            return;
+        }
+
+        const canvas : RenderTarget = this.canvas;
+
+        const bmpFontOutlinesWhite : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontOutlinesWhite);
+
+        const dx : number = canvas.width/2;
+        const dy : number = canvas.height/2 - 8;
+
+        if (this.readyPhase == 0) {
+
+            const offset : number = Math.max(0, (1.0 - this.readyTimer/READY_APPEAR_TIME)*64);
+
+            canvas.drawText(bmpFontOutlinesWhite, "READY?", dx, dy, -7 + offset, 0, Align.Center,
+                Math.PI*2, 1 + offset, this.waveTimer*2
+            );
+        }
+        else if (this.readyPhase == 1) {
+
+            canvas.setAlpha(Math.min(1.0, (READY_TIME - this.readyTimer)/READY_APPEAR_TIME))
+            canvas.drawText(bmpFontOutlinesWhite, "GO!", dx, dy, -7, 0, Align.Center,
+                Math.PI*2, 1, this.waveTimer*2
+            );
+            canvas.setAlpha();
+        }
+    }
+
+
     private drawGameScene() : void {
         
+        const CONTROLS_DISAPPEAR_TIME : number = 30;
+
         const canvas : RenderTarget = this.canvas;
 
         canvas.moveTo();
@@ -294,6 +390,18 @@ export class Game extends Program {
             canvas.setColor("rgba(0,0,0,0.5)");
             canvas.fillRect();
             canvas.drawText(bmpFontOutlines, "PAUSED", canvas.width/2, canvas.height/2 - 8, -8, 0, Align.Center);
+        }
+
+        if (this.controlsTimer > 0 || this.paused) {
+
+            this.drawControls(
+                this.paused ? 1.0 : Math.min(1.0, this.controlsTimer/CONTROLS_DISAPPEAR_TIME)
+            );
+        }
+
+        if (!this.paused) {
+
+            this.drawReadyScreen();
         }
 
         // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.Terrain));
