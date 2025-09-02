@@ -22,7 +22,7 @@ const HEALTHBAR_COLORS : string[] = ["#ffffff", "#000000", "rgba(0,0,0,0.33)"];
 
 const GAMEOVER_APPEAR_TIME : number = 30;
 const FADE_TIME : number = 20;
-const CONTROLS_TIME : number = 180;
+const CONTROLS_TIME : number = 300;
 const READY_TIME : number = 90;
 const READY_APPEAR_TIME : number = 30;
 
@@ -37,14 +37,14 @@ export class Game extends Program {
     private gameoverTimer : number = 0;
     private gameoverPhase : number = 0;
 
-    private fadeTimer : number = FADE_TIME;
+    private fadeTimer : number = FADE_TIME/2.0;
     private fadingIn : boolean = false;
     
     private controlsTimer : number = CONTROLS_TIME;
     private readyPhase : number = 0;
     private readyTimer : number = 0;
 
-    private scene : Scene = Scene.Game;
+    private scene : Scene = Scene.TitleScreen;
 
     private paused : boolean = false;
 
@@ -76,6 +76,20 @@ export class Game extends Program {
         this.stats.reset(0.5);
         this.stage = new Stage(this.stats);
         this.stage.update(false, this.components);
+    }
+
+
+    private updateTitlescreen() : void {
+
+        const WAVE_SPEED : number = Math.PI*2.0/180.0;
+
+        this.waveTimer = (this.waveTimer + WAVE_SPEED*this.components.tick) % (Math.PI*2.0);
+
+        if (this.components.controller.anythingPressed()) {
+
+            this.components.audio.playSample(this.components.assets.getSample(SampleIndex.Start), 0.60);
+            this.scene = Scene.Game;
+        }
     }
 
 
@@ -361,6 +375,32 @@ export class Game extends Program {
     }
 
 
+    private drawTitleScreen() : void {
+
+        const canvas : RenderTarget = this.canvas;
+    
+        const bmpLogo : Bitmap = this.components.assets.getBitmap(BitmapIndex.Logo);
+        const bmpFontOutlinesWhite : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontOutlinesWhite);
+        const bmpFontYellow : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontYellow);
+
+        this.stage.drawEnvironment(canvas, this.components.assets);
+        this.stage.drawObjects(canvas, this.components.assets);
+
+        canvas.setColor("rgba(0,0,0,0.50)");
+        canvas.fillRect();
+
+        canvas.drawHorizontallyWavingBitmap(bmpLogo, 
+            3, Math.PI*16, this.waveTimer*2, Flip.None, 
+            Math.cos(this.waveTimer)*4, 16 + Math.sin(this.waveTimer)*4);
+
+        canvas.drawText(bmpFontOutlinesWhite, "PRESS ANY KEY", canvas.width/2, canvas.height - 48, -7, 0, Align.Center,
+                Math.PI*2, 2, this.waveTimer*2);
+
+        canvas.drawText(bmpFontYellow, "*2025 JANI NYK@NEN",
+            canvas.width/2, canvas.height - 10, -1, 0, Align.Center);
+    }
+
+
     private drawGameScene() : void {
         
         const CONTROLS_DISAPPEAR_TIME : number = 30;
@@ -394,8 +434,14 @@ export class Game extends Program {
 
         if (this.controlsTimer > 0 || this.paused) {
 
+            let t : number = this.controlsTimer/CONTROLS_DISAPPEAR_TIME;
+            if (this.readyPhase == 0 && this.readyTimer < READY_APPEAR_TIME) {
+
+                t = this.readyTimer/READY_APPEAR_TIME;
+            }
+
             this.drawControls(
-                this.paused ? 1.0 : Math.min(1.0, this.controlsTimer/CONTROLS_DISAPPEAR_TIME)
+                this.paused ? 1.0 : Math.min(1.0, t)
             );
         }
 
@@ -404,7 +450,7 @@ export class Game extends Program {
             this.drawReadyScreen();
         }
 
-        // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.Terrain));
+        // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.Logo));
     }
 
 
@@ -433,6 +479,11 @@ export class Game extends Program {
             this.updateGameScene();
             break;
 
+        case Scene.TitleScreen:
+
+            this.updateTitlescreen();
+            break;
+
         default:
             break;
         }
@@ -443,6 +494,11 @@ export class Game extends Program {
         
         switch (this.scene) {
 
+        case Scene.TitleScreen:
+            
+            this.drawTitleScreen();
+            break;
+            
         case Scene.Game:
             
             this.drawGameScene();

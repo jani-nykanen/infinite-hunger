@@ -30,6 +30,7 @@ export class Player extends GameObject {
     private jumpTimer : number = 0.0;
     private ledgeTimer : number = 0.0;
     private canDoubleJump : boolean = false;
+    private specialJump : boolean = false;
 
     private tongueTimer : number = 0.0;
     private tongueOut : boolean = false;
@@ -66,9 +67,18 @@ export class Player extends GameObject {
 
         const JUMP_TIME : number = 20.0;
         const DOUBLE_JUMP_TIME : number = 14.0;
+        const SPECIAL_JUMP_BONUS : number = 10.0;
 
-        const jumpButton : ActionState = comp.controller.getAction(Controls.Jump);
-        if (jumpButton.state == InputState.Pressed) {
+        const jumpButtonState : InputState = comp.controller.getAction(Controls.Jump).state;
+
+        if (this.specialJump && this.jumpTimer > 0 && (jumpButtonState & InputState.DownOrPressed) != 0) {
+
+            this.jumpTimer += SPECIAL_JUMP_BONUS;
+            this.specialJump = false;
+            return;
+        }
+
+        if (jumpButtonState == InputState.Pressed) {
 
             const canJumpNormally : boolean = this.ledgeTimer > 0.0;
             if (canJumpNormally || this.canDoubleJump) {  
@@ -81,11 +91,14 @@ export class Player extends GameObject {
                 this.jumpTimer = canJumpNormally ? JUMP_TIME : DOUBLE_JUMP_TIME;
                 this.touchSurface = false;
                 this.ledgeTimer = 0.0;
+                this.specialJump = false;
 
                 comp.audio.playSample(comp.assets.getSample(SampleIndex.Jump), 0.70);
             }
         }
-        else if (this.jumpTimer > 0 && (jumpButton.state & InputState.DownOrPressed) == 0) {
+        else if (!this.specialJump &&
+            this.jumpTimer > 0 && 
+            (jumpButtonState & InputState.DownOrPressed) == 0) {
 
             this.jumpTimer = 0.0;
         }
@@ -517,6 +530,8 @@ export class Player extends GameObject {
 
     public bounce(baseSpeed : number, harmful : boolean) : void {
 
+        const SPECIAL_JUMP_TIME : number = 6;
+
         this.speed.y = -3.5 + baseSpeed;
         this.jumpTimer = 0.0;
         this.canDoubleJump = true;
@@ -525,6 +540,9 @@ export class Player extends GameObject {
         
             ++ this.stompMultiplier;
         }
+
+        this.specialJump = true;
+        this.jumpTimer = SPECIAL_JUMP_TIME;
     }
 
 

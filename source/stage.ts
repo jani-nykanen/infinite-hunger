@@ -14,7 +14,7 @@ import { Stats } from "./stats.js";
 import { Vector } from "./vector.js";
 
 
-const ENEMY_WEIGHTS_INITIAL : number[] = [0.30, 0.25, 0.30, 0.15, 0.0, 0.0, 0.0];
+const ENEMY_WEIGHTS_INITIAL : number[] = [0.275, 0.20, 0.275, 0.20, 0.05, 0.0, 0.0];
 const ENEMY_WEIGHTS_FINAL : number[] = [0.125, 0.125, 0.125, 0.125, 0.10, 0.25, 0.15];
 
 const ENEMY_COUNT_WEIGHTS_INITIAL : number[] = [0.20, 0.60, 0.20, 0.0, 0.0];
@@ -25,7 +25,7 @@ const COIN_COUNT_WEIGHTS_FINAL : number[] = [0.30, 0.45, 0.20, 0.05];
 
 const GROUND_ENEMIES : boolean[] = [false, false, false, true, true, false, true];
 
-const SPEED_UP_TIMER : number[] = [15*60, 60*60, 120*60, 210*60, 360*60];
+const SPEED_UP_TIMER : number[] = [15*60, 45*60, 90*60, 150*60, 240*60];
 const BASE_SPEEDS : number[] = [0.5, 0.75, 1.0, 1.25, 1.5];
 
 

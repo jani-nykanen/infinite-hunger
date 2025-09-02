@@ -75,8 +75,8 @@ export class Platform {
                 continue;
             }
 
-            if ((i > 0 && this.tiles[i + 1] == Tile.Bridge) ||
-                (i < this.tiles.length - 1 && this.tiles[i - 1] == Tile.Bridge)) {
+            if ((i < this.tiles.length - 1 && this.tiles[i + 1] == Tile.Bridge) ||
+                (i > 0 && this.tiles[i - 1] == Tile.Bridge)) {
 
                 this.decorations[i] = Decoration.None;
                 this.spikes[i] = false;

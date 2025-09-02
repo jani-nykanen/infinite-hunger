@@ -15,6 +15,7 @@ export const enum BitmapIndex {
     GameObjects = 8,
     Background = 9,
     GameOver = 10,
+    Logo = 11,
 }
 
 

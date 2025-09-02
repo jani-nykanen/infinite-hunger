@@ -418,7 +418,7 @@ const generateFonts = (assets : Assets, rgb333 : PaletteLookup) : void => {
     assets.addBitmap(BitmapIndex.FontOutlinesYellow, 
         generateOutlinedFont(bmpFontBlack, bmpFontYellow));
 
-    // Close enough to fonts
+    // Close enough to a font
     assets.addBitmap(BitmapIndex.GameOver,
         createBigText(
         "GAME\nOVER!", "bold 32px Arial", 128, 64, 28, 4, [
@@ -426,6 +426,28 @@ const generateFonts = (assets : Assets, rgb333 : PaletteLookup) : void => {
             [182, 36, 0]
         ])
     );
+}
+
+
+const generateLogo = (assets : Assets) : void => {
+
+    const upperBitmap : Bitmap = createBigText(
+        "INFINITE", "bold 28px Arial", 128, 32, 24, 4, [
+            [255, 146, 0],
+            [182, 36, 0]
+        ]);
+    const lowerBitmap : Bitmap = createBigText(
+        "HUNGER", "bold 40px Arial", 256, 64, 48, 6, [
+            [255, 146, 0],
+            [182, 36, 0]
+        ], 1);
+
+    const canvas : RenderTarget = new RenderTarget(256, 72, false);
+
+    canvas.drawBitmap(upperBitmap, Flip.None, 64, 0);
+    canvas.drawBitmap(lowerBitmap, Flip.None, 0, 12);
+
+    assets.addBitmap(BitmapIndex.Logo, canvas.toBitmap());
 }
 
 
@@ -546,6 +568,7 @@ export const generateAssets = (components : ProgramComponents) : void => {
     generateTerrainBitmap(assets, bmpGameArt);
     generateGameObjectsBitmap(assets, bmpGameArt);
     generateBackground(assets);
+    generateLogo(assets);
 
     // Sounds
     generateSamples(assets, audio);
