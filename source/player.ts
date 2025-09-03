@@ -413,7 +413,7 @@ export class Player extends GameObject {
         const dy : number = this.pos.y - 7;
 
         if (!this.exists ||
-            (this.hurtTimer > 0 && Math.floor(this.hurtTimer/4) % 2 == 0)) {
+            (this.hurtTimer > 0 && Math.floor(this.hurtTimer/2) % 2 == 0)) {
 
             return;
         }
@@ -462,7 +462,7 @@ export class Player extends GameObject {
 
         canvas.setAlpha(0.75);
         canvas.drawText(bmpFontOutlines, 
-            `+${(1.0 + this.stompMultiplier*STOMP_MULTIPLIER_BASE).toFixed(1)}`,
+            `-${(1.0 + this.stompMultiplier*STOMP_MULTIPLIER_BASE).toFixed(1)}`,
             this.pos.x, this.pos.y - 20, -9, 0, Align.Center);
         canvas.setAlpha();
     }
@@ -598,12 +598,14 @@ export class Player extends GameObject {
     }
 
 
-    public addCoins(amount : number) : void {
+    public addCoin() : number {
 
         const COIN_POINTS : number = 50;
 
-        this.addPoints(COIN_POINTS);
-        this.stats.coins += amount;
+        const v : number = this.addPoints(COIN_POINTS);
+        this.stats.addCoin();
+
+        return v;
     }
 
 
@@ -616,9 +618,9 @@ export class Player extends GameObject {
     }
 
 
-    public addPoints(amount : number) : void {
+    public addPoints(amount : number) : number {
 
-        this.stats.addPoints((amount*(1.0 + this.stompMultiplier*STOMP_MULTIPLIER_BASE)) | 0);
+        return this.stats.addPoints((amount*(1.0 + this.stompMultiplier*STOMP_MULTIPLIER_BASE)) | 0);
     }
 
 

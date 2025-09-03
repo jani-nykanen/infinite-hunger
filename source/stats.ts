@@ -17,6 +17,9 @@ export class Stats {
     public visibleScore : number = 0;
     public scoreDelta : number = 0;
     public hiscore : number = 0;
+    // This should be elsewhere, but this way I save
+    // some bytes...
+    public coinFlickerTimer : number = 0;
 
 
     constructor(initialHealth : number) {
@@ -32,13 +35,24 @@ export class Stats {
     }
 
 
-    public addPoints(points : number) : void {
+    public addCoin() : void {
 
-        const v : number = points*(1.0 + this.coins/10.0);
+        const COIN_FLICKER_TIME : number = 30;
+
+        ++ this.coins;
+        this.coinFlickerTimer = COIN_FLICKER_TIME;
+    }
+
+
+    public addPoints(points : number) : number {
+
+        const v : number = (points*(1.0 + this.coins/10.0)) | 0;
         this.score += v;
         this.scoreDelta = Math.max(5, v/20.0);
 
         this.hiscore = Math.max(this.hiscore, this.score);
+
+        return v;
     }
 
     
@@ -65,6 +79,11 @@ export class Stats {
     
         this.health = Math.max(0.0, 
             this.health - HEALTH_REDUCTION*baseSpeed*tick);
+
+        if (this.coinFlickerTimer > 0) {
+
+            this.coinFlickerTimer -= tick;
+        }
     }
 
 

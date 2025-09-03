@@ -12,6 +12,7 @@ import { clamp } from "./math.js";
 import { Particle } from "./particle.js";
 import { Stats } from "./stats.js";
 import { Vector } from "./vector.js";
+import { FlyingText } from "./flyingtext.js";
 
 
 const ENEMY_WEIGHTS_INITIAL : number[] = [0.275, 0.20, 0.275, 0.20, 0.05, 0.0, 0.0];
@@ -25,7 +26,7 @@ const COIN_COUNT_WEIGHTS_FINAL : number[] = [0.30, 0.45, 0.20, 0.05];
 
 const GROUND_ENEMIES : boolean[] = [false, false, false, true, true, false, true];
 
-const SPEED_UP_TIMER : number[] = [15*60, 45*60, 90*60, 150*60, 240*60];
+const SPEED_UP_TIMER : number[] = [20*60, 60*60, 120*60, 200*60, 300*60];
 const BASE_SPEEDS : number[] = [0.5, 0.75, 1.0, 1.25, 1.5];
 
 
@@ -47,6 +48,7 @@ export class Stage {
     // tongue collision also after enemies!)
     private coins : Enemy[];
     private particles : Particle[];
+    private flyingText : FlyingText[];
 
     private shake : Vector;
 
@@ -56,6 +58,7 @@ export class Stage {
         const INITIAL_PLATFORM : number = 3;
 
         this.particles = new Array<Particle> ();
+        this.flyingText = new Array<FlyingText> ();
 
         this.player = new Player(128, 120, stats, this.particles);
         this.enemies = new Array<Enemy> ();
@@ -249,7 +252,7 @@ export class Stage {
             const e : Enemy = this.enemies[i];
 
             e.update(this.baseSpeed, comp);
-            e.playerCollision(this.player, this.baseSpeed, this.particles, comp);
+            e.playerCollision(this.player, this.baseSpeed, this.particles, this.flyingText, comp);
 
             if (e.doesExist() && !e.isDying()) {
 
@@ -263,7 +266,7 @@ export class Stage {
         for (const c of this.coins) {
 
             c.update(this.baseSpeed, comp);
-            c.playerCollision(this.player, this.baseSpeed, this.particles, comp);
+            c.playerCollision(this.player, this.baseSpeed, this.particles, this.flyingText, comp);
         }
 
         for (const p of this.platforms) {
@@ -278,6 +281,11 @@ export class Stage {
         for (const p of this.particles) {
 
             p.update(this.baseSpeed, comp.tick);
+        }
+
+        for (const f of this.flyingText) {
+
+            f.update(comp.tick);
         }
     }
 
@@ -304,6 +312,7 @@ export class Stage {
     public drawObjects(canvas : RenderTarget, assets : Assets) : void {
 
         const bmpObjects : Bitmap = assets.getBitmap(BitmapIndex.GameObjects);
+        const bmpFontOutlinesYellow : Bitmap = assets.getBitmap(BitmapIndex.FontOutlinesYellow);
 
         this.applyShake(canvas);
 
@@ -325,6 +334,11 @@ export class Stage {
         this.player.postDraw(canvas, assets);
 
         canvas.moveTo();
+
+        for (const f of this.flyingText) {
+
+            f.draw(canvas, bmpFontOutlinesYellow);
+        }
     }
 
 

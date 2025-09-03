@@ -243,6 +243,7 @@ export class Game extends Program {
         const canvas : RenderTarget = this.canvas;
         const bmpBase : Bitmap = this.components.assets.getBitmap(BitmapIndex.Base);
         const bmpFontOutlines : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontOutlinesWhite);
+        const bmpFontOutlinesYellow : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontOutlinesYellow);
 
         canvas.setAlpha(alpha);
 
@@ -252,9 +253,12 @@ export class Game extends Program {
         canvas.drawText(bmpFontOutlines, scoreStr, -2, 6, -9, 0);
 
         // Bonus
-        const bonusStr : string = "+" + (1.0 + this.stats.coins/10.0).toFixed(1);
+        const useYellowFont : boolean = this.stats.coinFlickerTimer > 0 && 
+            Math.floor(this.stats.coinFlickerTimer/4) % 2 == 0;
+        const bonusFont : Bitmap = useYellowFont ? bmpFontOutlinesYellow : bmpFontOutlines;
+        const bonusStr : string = "-" + (1.0 + this.stats.coins/10.0).toFixed(1);
         canvas.drawBitmap(bmpBase, Flip.None, canvas.width - 32, 1, 40, 104, 24, 8);
-        canvas.drawText(bmpFontOutlines, bonusStr, canvas.width - 22, 6, -9, 0, Align.Center);
+        canvas.drawText(bonusFont, bonusStr, canvas.width - 22, 6, -9, 0, Align.Center);
 
         //
         // Health

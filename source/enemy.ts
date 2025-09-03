@@ -7,6 +7,8 @@ import { Platform } from "./platform.js";
 import { Player } from "./player.js";
 import { Rectangle } from "./rectangle.js";
 import { Particle, spawnParticleExplosion } from "./particle.js";
+import { FlyingText } from "./flyingtext.js";
+import { nextExistingObject } from "./existingobject.js";
 
 
 const CHAINBALL_DISTANCE : number = 32;
@@ -191,7 +193,13 @@ export class Enemy extends GameObject {
     }
 
 
-    private checkStompCollision(baseSpeed : number, player : Player, comp : ProgramComponents) : boolean {
+    private spawnFlyingText(points : number, flyingText : FlyingText[]) : void {
+
+        nextExistingObject<FlyingText>(flyingText, FlyingText).spawn(this.pos.x, this.pos.y - 4, points);
+    }
+
+
+    private checkStompCollision(baseSpeed : number, player : Player, flyingText : FlyingText[], comp : ProgramComponents) : boolean {
 
         const STOMP_WIDTH : number = 28;
         const STOMP_YOFF : number = 12.0;
@@ -226,7 +234,8 @@ export class Enemy extends GameObject {
         else {
 
             this.kill();
-            player.addPoints(STOMP_POINTS);
+            const points : number = player.addPoints(STOMP_POINTS);
+            this.spawnFlyingText(points, flyingText);
 
             comp.audio.playSample(comp.assets.getSample(SampleIndex.Stomp), 0.80);
         }
@@ -260,7 +269,7 @@ export class Enemy extends GameObject {
     }
 
 
-    private followTongue(player : Player, particles : Particle[], comp : ProgramComponents) : void {
+    private followTongue(player : Player, particles : Particle[], flyingText : FlyingText[], comp : ProgramComponents) : void {
 
         if (!player.isTongueActive()) {
 
@@ -275,13 +284,19 @@ export class Enemy extends GameObject {
             if (this.type == EnemyType.Coin) {
 
                 comp.audio.playSample(comp.assets.getSample(SampleIndex.Coin), 0.60);
-                player.addCoins(1);
+
+                const points : number = player.addCoin();
+                this.spawnFlyingText(points, flyingText);
+
                 this.kill();
             }
             else {
 
-                player.addPoints(EATING_POINTS);
+                const points : number = player.addPoints(EATING_POINTS);
+                this.spawnFlyingText(points, flyingText);
+
                 player.addHealth(EATING_HEALTH);
+
                 this.exists = false;
                 spawnParticleExplosion(particles, this.pos, 16);
 
@@ -550,7 +565,8 @@ export class Enemy extends GameObject {
 
 
     public playerCollision(player : Player, baseSpeed : number,
-        particles : Particle[], comp : ProgramComponents) : boolean {
+        particles : Particle[], flyingText : FlyingText[],
+        comp : ProgramComponents) : boolean {
 
         if (!this.exists || !player.doesExist() 
             || this.dying || player.isDying() ||
@@ -563,7 +579,7 @@ export class Enemy extends GameObject {
 
             if (player.getStickyObject() === this) {
             
-                this.followTongue(player, particles, comp);
+                this.followTongue(player, particles, flyingText, comp);
             }
             return false;
         }
@@ -573,7 +589,7 @@ export class Enemy extends GameObject {
             return false;
         }
 
-        if (this.checkStompCollision(baseSpeed, player, comp)) {
+        if (this.checkStompCollision(baseSpeed, player, flyingText, comp)) {
 
             return true;
         }
@@ -584,7 +600,10 @@ export class Enemy extends GameObject {
             if (this.type == EnemyType.Coin) {
 
                 comp.audio.playSample(comp.assets.getSample(SampleIndex.Coin), 0.60);
-                player.addCoins(1);
+
+                const points : number = player.addCoin();
+                this.spawnFlyingText(points, flyingText);
+
                 this.kill();
             }
             else {
