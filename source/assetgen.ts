@@ -9,7 +9,7 @@ import { ProgramComponents } from "./program.js";
 
 type PaletteLookup = [number, number, number, number][];
 
-
+/*
 const enum Note {
 
     C2 = 65.41,
@@ -34,7 +34,7 @@ const enum Note {
     A4 = 440.0,
     B4 = 493.88,
 }
-
+*/
 
 const TRANSPARENT_COLOR : number = 0b100;
 const PALETTE_TABLE : number[] = [

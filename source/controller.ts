@@ -42,7 +42,6 @@ export class Controller {
 
     private actions : Map<number, Action>;
     private preventableKeys : string[];
-    private preventableSpecialKeys : string[];
     private anyPressed : boolean = false;
 
 
@@ -52,7 +51,6 @@ export class Controller {
         this.actions = new Map<number, Action> ();
 
         const preventableRaw : string[] = [];
-        const preventableSpecialRaw : string[] = [];
 
         for (const a of actions) {
 
@@ -64,13 +62,10 @@ export class Controller {
         }
         // This way we *prevent* duplicates
         this.preventableKeys = Array.from(new Set(preventableRaw));
-        this.preventableSpecialKeys = Array.from(new Set(preventableSpecialRaw));
-
         // Set listeners
         window.addEventListener("keydown", (ev : KeyboardEvent) : void => {
 
-            if (this.preventableKeys.includes(ev.code) ||
-                this.preventableSpecialKeys.includes(ev.key)) {
+            if (this.preventableKeys.includes(ev.code)) {
 
                 ev.preventDefault();
             }
@@ -78,8 +73,7 @@ export class Controller {
         });
         window.addEventListener("keyup", (ev : KeyboardEvent) : void => {
 
-            if (this.preventableKeys.includes(ev.code) ||
-                this.preventableSpecialKeys.includes(ev.key)) {
+            if (this.preventableKeys.includes(ev.code)) {
 
                 ev.preventDefault();
             }
