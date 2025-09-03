@@ -1,6 +1,7 @@
 # Infinite Hunger
 
-A simple arcade game thingy made for [js13k](https://js13kgames.com/) 2025.
+A simple arcade game thingy made for [js13k](https://js13kgames.com/) 2025. [You can play it here](js13kgames.com/2025/games/infinite-hunger) 
+(or you will be able to play it eventually).
 
 
 ## Compilation
