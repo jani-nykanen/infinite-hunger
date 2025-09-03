@@ -6,8 +6,10 @@ import { Rectangle } from "./rectangle.js";
 
 export class GameObject implements ExistingObject {
 
-    protected pos : Vector;
-    protected speed : Vector;
+    // These are public to save bytes
+    public pos : Vector;
+    public speed : Vector;
+
     protected speedTarget : Vector;
     protected friction : Vector;
 
@@ -42,18 +44,6 @@ export class GameObject implements ExistingObject {
     protected overlay(o : GameObject) : boolean {
 
         return Rectangle.overlayShifted(this.pos, this.hitbox, o.pos, o.hitbox);
-    }
-
-
-    public getPosition() : Vector {
-
-        return this.pos.clone();
-    }
-
-
-    public getSpeed() : Vector {
-
-        return this.speed.clone();
     }
 
 

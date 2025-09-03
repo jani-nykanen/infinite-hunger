@@ -31,6 +31,11 @@ export class FlyingText extends GameObject {
         const FLY_SPEED : number = -1.5;
         const WAIT_TIME : number = 30;
 
+        if (!this.exists) {
+
+            return;
+        }
+
         this.timer += tick;
         if (this.timer < FLY_TIME) {
 

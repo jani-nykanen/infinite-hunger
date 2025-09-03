@@ -462,7 +462,7 @@ export class Player extends GameObject {
 
         canvas.setAlpha(0.75);
         canvas.drawText(bmpFontOutlines, 
-            `-${(1.0 + this.stompMultiplier*STOMP_MULTIPLIER_BASE).toFixed(1)}`,
+            `&${(1.0 + this.stompMultiplier*STOMP_MULTIPLIER_BASE).toFixed(1)}`,
             this.pos.x, this.pos.y - 20, -9, 0, Align.Center);
         canvas.setAlpha();
     }

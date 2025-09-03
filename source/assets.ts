@@ -57,33 +57,15 @@ export class Assets {
 
 
     public getBitmap(id : number) : Bitmap {
-/*
-        const bmp : Bitmap | undefined = this.bitmaps.get(id);
-        if (bmp === undefined) {
 
-            // DEBUG
-            throw new Error(`Could not find a bitmap with id ${id}!`);
-        }
-*/
         return this.bitmaps.get(id)!;
     }
 
 
     public getSample(id : number) : AudioSample {
-/*
-        const sample : AudioSample | undefined = this.samples.get(id);
-        if (sample === undefined) {
 
-            // DEBUG
-            throw new Error(`Could not find a sample with id ${id}!`);
-        }
-*/
         return this.samples.get(id)!;
     }
 
 
-    public getLoadRatio() : number {
-
-        return this.totalCount == 0 ? 1.0 : this.loadedCount/this.totalCount;
-    }
 }

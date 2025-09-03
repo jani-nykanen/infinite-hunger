@@ -26,17 +26,14 @@ export class Program {
 
     constructor(audioCtx : AudioContext,
         canvasWidth : number, canvasHeight : number,
-        controllerActions : ActionConfig[], 
-        ticksPerSecond : number = 60, globalAudioVolume : number = 0.60,
-    ) {
+        controllerActions : ActionConfig[]) {
 
-        ticksPerSecond = Math.max(1, ticksPerSecond) | 0;
         this.components = {
 
             controller: new Controller(controllerActions),
-            audio: new AudioPlayer(audioCtx, globalAudioVolume),
+            audio: new AudioPlayer(audioCtx),
             assets: new Assets(),
-            tick: 1.0/ticksPerSecond/(1.0/60.0),
+            tick: 1.0,
         }
 
         this.canvas = new RenderTarget(canvasWidth, canvasHeight, true);
@@ -64,12 +61,12 @@ export class Program {
 
             if (this.initialized) {
 
-                this.onUpdate();
+                this.onUpdate?.();
             }
 
             if (loaded && !this.initialized) {
                 
-                this.onLoad();
+                this.onLoad?.();
                 this.initialized = true;
             }
                 
@@ -82,7 +79,7 @@ export class Program {
 
         if (refreshScreen && loaded) {
 
-            this.onRedraw();
+            this.onRedraw?.();
         }
 
         window.requestAnimationFrame((ts : number) => this.loop(ts));
@@ -91,16 +88,13 @@ export class Program {
 
     public run() : void {
 
-        this.onInit();
+        this.onInit?.();
         this.loop(0.0);
     }
 
 
-    // NOTE: I could have onInit?() instead, but defining
-    // these make some Closure warning go away (although I 
-    // did lose 5 bytes in the process...)
-    public onInit() : void {};
-    public onLoad() : void {};
-    public onUpdate() : void {};
-    public onRedraw() : void {};
+    public onInit?() : void;
+    public onLoad?() : void;
+    public onUpdate?() : void;
+    public onRedraw?() : void;
 }

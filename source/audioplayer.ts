@@ -1,18 +1,16 @@
 import { AudioSample, OscType, Ramp } from "./audiosample.js";
 
 
+const GLOBAL_VOLUME : number = 0.50;
+
 
 export class AudioPlayer {
 
-    private globalVolume : number;
-    private enabled : boolean = true;
 
     private readonly ctx : AudioContext;
 
 
-    constructor(ctx : AudioContext, globalVolume : number = 0.60) {
-
-        this.globalVolume = globalVolume;
+    constructor(ctx : AudioContext) {
 
         this.ctx = ctx;
     }
@@ -28,26 +26,10 @@ export class AudioPlayer {
 
     public playSample(sample : AudioSample, volume : number = 0.60) : void {
 
-        if (!this.enabled) {
-
-            return;
-        }
         try {
 
-            sample.play(volume*this.globalVolume);
+            sample.play(volume*GLOBAL_VOLUME);
         }
         catch (e) {}
-    }
-
-
-    public toggleAudio(state : boolean = !this.enabled) : void {
-
-        this.enabled = state;
-    }
-
-
-    public getStateString() : string {
-
-        return "AUDIO: " + (this.enabled ? "ON " : "OFF");
     }
 }

@@ -37,16 +37,19 @@ export class Game extends Program {
     private gameoverTimer : number = 0;
     private gameoverPhase : number = 0;
 
-    private fadeTimer : number = FADE_TIME/2.0;
+    private fadeTimer : number = 0;
     private fadingIn : boolean = false;
     
     private controlsTimer : number = CONTROLS_TIME;
     private readyPhase : number = 0;
     private readyTimer : number = 0;
 
-    private scene : Scene = Scene.TitleScreen;
+    private scene : Scene = Scene.Intro;
 
     private paused : boolean = false;
+
+    private introTimer : number = 0.0;
+    private introPhase : number = 0;
 
 
     constructor(audioCtx : AudioContext) {
@@ -89,6 +92,9 @@ export class Game extends Program {
 
             this.components.audio.playSample(this.components.assets.getSample(SampleIndex.Start), 0.60);
             this.scene = Scene.Game;
+
+            this.fadeTimer = FADE_TIME/2;
+            this.fadingIn = false;
         }
     }
 
@@ -96,26 +102,6 @@ export class Game extends Program {
     private updateGameScene() : void {
 
         const WAVE_SPEED : number = Math.PI*2.0/90.0;
-
-        if (this.fadeTimer > 0) {
-
-            this.fadeTimer -= this.components.tick;
-            if (this.fadeTimer <= 0) {
-
-                if (this.fadingIn) {
-
-                    this.fadeTimer += FADE_TIME;
-                    this.fadingIn = false;
-                
-                    this.restartGame();
-                }
-                else {
-
-                    this.fadeTimer = 0;
-                }
-            }
-            return;
-        }
 
         if (!this.paused) {
         
@@ -196,6 +182,34 @@ export class Game extends Program {
     }
 
 
+    private updateIntro() : void {
+
+        const WAIT_TIME : number = 90;
+
+        if (this.introPhase == 0) {
+
+            if (this.components.controller.anythingPressed()) {
+
+                this.components.audio.playSample(
+                    this.components.assets.getSample(SampleIndex.Start), 0.50);
+
+                ++ this.introPhase;
+                this.fadeTimer = FADE_TIME;
+                this.fadingIn = false;
+            }
+            return;
+        }
+
+        this.introTimer += this.components.tick;
+        if (this.introTimer >= WAIT_TIME || 
+            this.components.controller.anythingPressed()) {
+
+            this.fadingIn = true;
+            this.fadeTimer = FADE_TIME;
+        }
+    }
+
+
     private drawGameoverScreen() : void {
 
         if (this.gameoverPhase == 0) {
@@ -256,7 +270,7 @@ export class Game extends Program {
         const useYellowFont : boolean = this.stats.coinFlickerTimer > 0 && 
             Math.floor(this.stats.coinFlickerTimer/4) % 2 == 0;
         const bonusFont : Bitmap = useYellowFont ? bmpFontOutlinesYellow : bmpFontOutlines;
-        const bonusStr : string = "-" + (1.0 + this.stats.coins/10.0).toFixed(1);
+        const bonusStr : string = "&" + (1.0 + this.stats.coins/10.0).toFixed(1);
         canvas.drawBitmap(bmpBase, Flip.None, canvas.width - 32, 1, 40, 104, 24, 8);
         canvas.drawText(bonusFont, bonusStr, canvas.width - 22, 6, -9, 0, Align.Center);
 
@@ -420,13 +434,6 @@ export class Game extends Program {
 
         this.drawGameoverScreen();
 
-        if (this.fadeTimer > 0) {
-
-            const t : number = this.fadingIn ? 1.0 - this.fadeTimer/FADE_TIME : this.fadeTimer/FADE_TIME;
-            canvas.setColor(`rgba(0,0,0,${t})`);
-            canvas.fillRect();
-        }
-
         if (this.paused) {
 
             const bmpFontOutlines : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontOutlinesWhite);
@@ -458,6 +465,44 @@ export class Game extends Program {
     }
 
 
+    private drawIntro() : void {
+
+        const canvas : RenderTarget = this.canvas;
+
+        canvas.clearScreen("#000000");
+
+        const bmpFont : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontWhite);
+        const bmpFontYellow : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontYellow);
+
+        const centerx : number = canvas.width/2;
+        const centery : number = canvas.height/2;
+
+        switch (this.introPhase) {
+
+        case 0:
+
+            canvas.drawText(bmpFont, "PRESS ANY KEY", centerx, centery - 4, -1, 0, Align.Center);
+            break;
+
+        case 1:
+
+            canvas.drawText(bmpFontYellow, "A GAME BY", centerx, centery - 10, -1, 0, Align.Center);
+            canvas.drawText(bmpFont, "JANI NYK@NEN", centerx, centery + 2, -1, 0, Align.Center);
+            break;
+
+
+        case 2:
+
+            canvas.drawText(bmpFontYellow, "CREATED FOR", centerx, centery - 10, -1, 0, Align.Center);
+            canvas.drawText(bmpFont, "JS13K 2025", centerx, centery + 2, -1, 0, Align.Center);
+            break;
+
+        default:
+            break;
+        }
+    }
+
+
     public onInit() : void {
         
         this.components.assets.loadBitmaps(
@@ -476,6 +521,38 @@ export class Game extends Program {
 
     public onUpdate() : void {
         
+        if (this.fadeTimer > 0) {
+
+            this.fadeTimer -= this.components.tick;
+            if (this.fadeTimer <= 0) {
+
+                if (this.fadingIn) {
+
+                    this.fadeTimer += FADE_TIME;
+                    this.fadingIn = false;
+                
+                    if (this.scene == Scene.Game) {
+
+                        this.restartGame();
+                    }
+                    else if (this.scene == Scene.Intro) {
+
+                        ++ this.introPhase;
+                        if (this.introPhase == 3) {
+
+                            this.scene = Scene.TitleScreen;
+                        }
+                        this.introTimer = 0;
+                    }
+                }
+                else {
+
+                    this.fadeTimer = 0;
+                }
+            }
+            return;
+        }
+
         switch (this.scene) {
 
         case Scene.Game:
@@ -488,6 +565,11 @@ export class Game extends Program {
             this.updateTitlescreen();
             break;
 
+        case Scene.Intro:
+
+            this.updateIntro();
+            break;
+
         default:
             break;
         }
@@ -496,6 +578,8 @@ export class Game extends Program {
 
     public onRedraw() : void {
         
+        const canvas : RenderTarget = this.canvas;
+
         switch (this.scene) {
 
         case Scene.TitleScreen:
@@ -508,8 +592,20 @@ export class Game extends Program {
             this.drawGameScene();
             break;
 
+        case Scene.Intro:
+
+            this.drawIntro();
+            break;
+
         default:
             break;
+        }
+
+        if (this.fadeTimer > 0) {
+
+            const t : number = this.fadingIn ? 1.0 - this.fadeTimer/FADE_TIME : this.fadeTimer/FADE_TIME;
+            canvas.setColor(`rgba(0,0,0,${t})`);
+            canvas.fillRect();
         }
     }
 }

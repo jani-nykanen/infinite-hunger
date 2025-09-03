@@ -35,7 +35,9 @@ const SPIKE_WEIGHTS_FINAL : number[] = [0.10, 0.30, 0.40, 0.15, 0.05];
 
 export class Platform {
 
+    // This is public to save bytes
     private y : number;
+
     private screenHeight : number;
     private initialShift : number;
 
@@ -418,7 +420,7 @@ export class Platform {
 
     public playerCollision(player : Player, baseSpeed : number, comp : ProgramComponents) : void {
 
-        if (!player.doesExist() || player.isDying() || player.getPosition().y < -9) {
+        if (!player.doesExist() || player.isDying() || player.pos.y < -9) {
 
             return;
         }

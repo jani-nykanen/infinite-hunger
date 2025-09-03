@@ -23,6 +23,10 @@ const EATING_POINTS : number = 100;
 const STOMP_POINTS : number = 200;
 
 
+const SX : number[] = [0, 0, 0, 2, 6]
+const SY : number[] = [2, 1, 1, 1, 1]
+
+
 export const enum EnemyType {
 
     Coin = 0, // Yes, coin is an enemy
@@ -176,9 +180,9 @@ export class Enemy extends GameObject {
 
     private updateChainball(baseSpeed : number, tick : number) : void {
 
-        const ROTATION_SPEED : number = Math.PI*2/120.0;
+        const ROTATION_SPEED : number = Math.PI*2/240.0;
 
-        this.specialTimer = (this.specialTimer + ROTATION_SPEED*tick) % (Math.PI*2);
+        this.specialTimer = (this.specialTimer + (0.5 + baseSpeed)*ROTATION_SPEED*tick) % (Math.PI*2);
 
         this.pos.x = this.initialPos.x + Math.cos(this.specialTimer)*this.direction*CHAINBALL_DISTANCE;
         this.pos.y = this.referencePlatform!.getY() + 8 + Math.sin(this.specialTimer)*CHAINBALL_DISTANCE;
@@ -212,15 +216,13 @@ export class Enemy extends GameObject {
             return false;
         }
 
-        const ppos : Vector = player.getPosition();
-        const pspeed : Vector = player.getSpeed();
         const top : number = this.pos.y - STOMP_YOFF;
 
-        if (pspeed.y < MIN_SPEED || 
-            ppos.x < this.pos.x - STOMP_WIDTH/2 || 
-            ppos.x > this.pos.x + STOMP_WIDTH/2 ||
-            ppos.y < top - NEAR_MARGIN*comp.tick ||
-            ppos.y >= top + (FAR_MARGIN + Math.abs(pspeed.y))*comp.tick
+        if (player.speed.y < MIN_SPEED || 
+            player.pos.x < this.pos.x - STOMP_WIDTH/2 || 
+            player.pos.x > this.pos.x + STOMP_WIDTH/2 ||
+            player.pos.y < top - NEAR_MARGIN*comp.tick ||
+            player.pos.y >= top + (FAR_MARGIN + Math.abs(player.speed.y))*comp.tick
             ) {
 
             return false;
@@ -307,43 +309,6 @@ export class Enemy extends GameObject {
         }
 
         this.pos.makeEqual(player.getTonguePosition());
-    }
-
-
-    private drawStaticBee(canvas : RenderTarget, bmp : Bitmap) : void {
-
-        canvas.drawBitmap(bmp, this.specialFlip, this.pos.x - 8, this.pos.y - 8,
-            this.frame*16, 16, 16, 16);
-    }
-
-
-    private drawMovingBee(canvas : RenderTarget, bmp : Bitmap) : void {
-
-        canvas.drawBitmap(bmp, this.specialFlip, this.pos.x - 8, this.pos.y - 8,
-            this.frame*16, 16, 16, 16, 16, 16, 8, 8, -Math.PI/2*this.direction);
-    }
-
-
-    private drawSlime(canvas : RenderTarget, bmp : Bitmap) : void {
-
-        canvas.drawBitmap(bmp, this.specialFlip, this.pos.x - 8, this.pos.y - 8,
-            32 + this.frame*16, 16, 16, 16);
-    }
-
-
-    private drawCar(canvas : RenderTarget, bmp : Bitmap) : void {
-
-        canvas.drawBitmap(bmp, (this.direction > 0 ? Flip.Horizontal : Flip.None) | this.specialFlip, 
-            this.pos.x - 8, this.pos.y - 8,
-            96 + this.frame*16, 16, 16, 16);
-    }
-
-
-    private drawCoin(canvas : RenderTarget, bmp : Bitmap) : void {
-
-        canvas.drawBitmap(bmp, this.specialFlip, 
-            this.pos.x - 8, this.pos.y - 8,
-            this.frame*16, 32, 16, 16);
     }
 
 
@@ -460,7 +425,6 @@ export class Enemy extends GameObject {
 
         if (this.dying) {
 
-            // TODO: Create "drawDeath" function
             canvas.drawBitmap(bmp, Flip.None, 
                 this.pos.x - 16, 
                 this.pos.y - 16, 
@@ -471,45 +435,20 @@ export class Enemy extends GameObject {
         }
 
         this.specialFlip = this.sticky ? Flip.Vertical : Flip.None;
+        if (this.type >= EnemyType.Coin && this.type <= EnemyType.Car) {
 
-        switch (this.type) {
-
-        case EnemyType.Coin:
-
-            this.drawCoin(canvas, bmp);
-            break;
-
-        case EnemyType.StaticBee:
-            
-            this.drawStaticBee(canvas, bmp);
-            break;
-
-        case EnemyType.MovingBee:
-
-            this.drawMovingBee(canvas, bmp);
-            break;
-
-        case EnemyType.Slime:
-
-            this.drawSlime(canvas, bmp);
-            break;
-
-        case EnemyType.Car:
-
-            this.drawCar(canvas, bmp);
-            break;
-
-        case EnemyType.Spikeball:
-        case EnemyType.ChainBall:
-        case EnemyType.MovingSpikeball:
+            canvas.drawBitmap(bmp, 
+                (this.direction > 0 ? Flip.Horizontal : Flip.None) | this.specialFlip, 
+                this.pos.x - 8, this.pos.y - 8,
+                SX[this.type]*16 + this.frame*16, SY[this.type]*16, 
+                16, 16, 16, 16, 8, 8, 
+                this.type == EnemyType.MovingBee ? Math.PI/2 : undefined);
+        }
+        else {
 
             this.drawSpikeBall(canvas, bmp, 
                 this.type == EnemyType.ChainBall,
                 this.type == EnemyType.MovingSpikeball);
-            break;
-
-        default:
-            break;
         }
     }
 
@@ -524,7 +463,7 @@ export class Enemy extends GameObject {
         this.speedTarget.zero();
 
         this.specialTimer = Math.random()*Math.PI*2;
-        this.direction = Math.random() > 0.5 ? 1 : -1;
+        this.direction = -1;
 
         this.referencePlatform = referencePlatform;
 
@@ -552,6 +491,12 @@ export class Enemy extends GameObject {
 
         case EnemyType.ChainBall:
             this.specialTimer = Math.PI/4 + (Math.random()*Math.PI/2);
+            break;
+
+        case EnemyType.MovingBee:
+        case EnemyType.MovingSpikeball:
+        case EnemyType.Car:
+            this.direction = Math.random() > 0.5 ? 1 : -1;
             break;
 
         default:
