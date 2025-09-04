@@ -392,7 +392,7 @@ export class Player extends GameObject {
 
     public preDraw(canvas : RenderTarget) : void {
 
-        if (this.hurtTimer > 0 && Math.floor(this.hurtTimer/4) % 2 == 0) {
+        if (this.hurtTimer > 0 && Math.floor(this.hurtTimer/2) % 2 == 0) {
 
             return;
         }

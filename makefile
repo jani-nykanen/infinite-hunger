@@ -2,12 +2,6 @@
 JS_FILES := $(wildcard js/*.js) $(wildcard js/*/*.js) $(wildcard js/*/*/*.js)
 
 
-LEVEL_SRC_PATH := source/leveldata.ts
-LEVEL_FOLDER := levels
-mapconv := ./scripts/mapconv.py
-
-
-
 all: js
 
 .PHONY: js
@@ -21,25 +15,6 @@ watch:
 .PHONY: server
 server:
 	python3 -m http.server
-
-
-.PHONY: levels
-levels:
-	echo -n "export const LEVEL_DATA : string[] = [\n" > $(LEVEL_SRC_PATH)
-	$(mapconv) $(LEVEL_FOLDER)/1.tmx >> $(LEVEL_SRC_PATH)
-	$(mapconv) $(LEVEL_FOLDER)/2.tmx >> $(LEVEL_SRC_PATH)
-	$(mapconv) $(LEVEL_FOLDER)/3.tmx >> $(LEVEL_SRC_PATH)
-	$(mapconv) $(LEVEL_FOLDER)/4.tmx >> $(LEVEL_SRC_PATH)
-	$(mapconv) $(LEVEL_FOLDER)/5.tmx >> $(LEVEL_SRC_PATH)
-	$(mapconv) $(LEVEL_FOLDER)/6.tmx >> $(LEVEL_SRC_PATH)
-	$(mapconv) $(LEVEL_FOLDER)/7.tmx >> $(LEVEL_SRC_PATH)
-	$(mapconv) $(LEVEL_FOLDER)/8.tmx >> $(LEVEL_SRC_PATH)
-	$(mapconv) $(LEVEL_FOLDER)/9.tmx >> $(LEVEL_SRC_PATH)
-	$(mapconv) $(LEVEL_FOLDER)/10.tmx >> $(LEVEL_SRC_PATH)
-	$(mapconv) $(LEVEL_FOLDER)/11.tmx >> $(LEVEL_SRC_PATH)
-	$(mapconv) $(LEVEL_FOLDER)/12.tmx >> $(LEVEL_SRC_PATH)
-	$(mapconv) $(LEVEL_FOLDER)/13.tmx >> $(LEVEL_SRC_PATH)
-	echo -n "]" >> $(LEVEL_SRC_PATH)
 
 
 

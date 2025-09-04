@@ -105,7 +105,7 @@ const generatePaletteLookup = () : PaletteLookup => {
 
 const generateTerrainBitmap = (assets : Assets, bmpBase : Bitmap) : void => {
 
-    const canvas : RenderTarget = new RenderTarget(256, 32, false);
+    const canvas : RenderTarget = new RenderTarget(256, 32);
 
     // Adding missing colors
     canvas.setColor("#492400");
@@ -180,7 +180,7 @@ const generateGameObjectsBitmap = (assets : Assets, bmpBase : Bitmap) : void => 
 
     const FACE_OFFSET : number[] = [0, 2, 0, -2];
 
-    const canvas : RenderTarget = new RenderTarget(256, 128, false);
+    const canvas : RenderTarget = new RenderTarget(256, 128);
 
     // Player
     for (let i : number = 0; i < 6; ++ i) {
@@ -308,7 +308,7 @@ const generateBackground = (assets : Assets) : void => {
     const FOREST_PERIOD : number = 16;
     const FOREST_SHIFT : number = 64;
 
-    const canvas : RenderTarget = new RenderTarget(256, 160, false);
+    const canvas : RenderTarget = new RenderTarget(256, 160);
 
     // Moon
     canvas.setColor("#dbffff");
@@ -416,7 +416,7 @@ const generateLogo = (assets : Assets) : void => {
             [182, 36, 0]
         ], 1);
 
-    const canvas : RenderTarget = new RenderTarget(256, 72, false);
+    const canvas : RenderTarget = new RenderTarget(256, 72);
 
     canvas.drawBitmap(upperBitmap, Flip.None, 64, 0);
     canvas.drawBitmap(lowerBitmap, Flip.None, 0, 12);

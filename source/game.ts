@@ -22,7 +22,7 @@ const HEALTHBAR_COLORS : string[] = ["#ffffff", "#000000", "rgba(0,0,0,0.33)"];
 
 const GAMEOVER_APPEAR_TIME : number = 30;
 const FADE_TIME : number = 20;
-const CONTROLS_TIME : number = 300;
+const CONTROLS_TIME : number = 480;
 const READY_TIME : number = 90;
 const READY_APPEAR_TIME : number = 30;
 
@@ -312,6 +312,11 @@ export class Game extends Program {
             }
         }
 
+        if (this.controlsTimer > 0) {
+
+            this.drawControls();
+        }
+
         if (this.stats.visibleHealth > 0.0) {
 
             const t : number = this.stats.visibleHealth*2.0;
@@ -342,8 +347,17 @@ export class Game extends Program {
     }
 
 
-    private drawControls(t : number) : void {
+    private drawControls() : void {
      
+        const CONTROLS_DISAPPEAR_TIME : number = 30;
+
+        let t : number = this.controlsTimer/CONTROLS_DISAPPEAR_TIME;
+        if (this.readyPhase == 0 && this.readyTimer < READY_APPEAR_TIME) {
+
+            t = this.readyTimer/READY_APPEAR_TIME;
+        }
+        t = this.paused ? 1.0 : Math.min(1.0, t);
+
         const canvas : RenderTarget = this.canvas;
 
         const bmpFontOutlinesWhite : Bitmap = this.components.assets.getBitmap(BitmapIndex.FontOutlinesWhite);
@@ -421,8 +435,6 @@ export class Game extends Program {
 
     private drawGameScene() : void {
         
-        const CONTROLS_DISAPPEAR_TIME : number = 30;
-
         const canvas : RenderTarget = this.canvas;
 
         canvas.moveTo();
@@ -441,25 +453,11 @@ export class Game extends Program {
             canvas.setColor("rgba(0,0,0,0.5)");
             canvas.fillRect();
             canvas.drawText(bmpFontOutlines, "PAUSED", canvas.width/2, canvas.height/2 - 8, -8, 0, Align.Center);
+
+            this.drawControls();
+            return;
         }
-
-        if (this.controlsTimer > 0 || this.paused) {
-
-            let t : number = this.controlsTimer/CONTROLS_DISAPPEAR_TIME;
-            if (this.readyPhase == 0 && this.readyTimer < READY_APPEAR_TIME) {
-
-                t = this.readyTimer/READY_APPEAR_TIME;
-            }
-
-            this.drawControls(
-                this.paused ? 1.0 : Math.min(1.0, t)
-            );
-        }
-
-        if (!this.paused) {
-
-            this.drawReadyScreen();
-        }
+        this.drawReadyScreen();
 
         // canvas.drawBitmap(this.components.assets.getBitmap(BitmapIndex.Logo));
     }
